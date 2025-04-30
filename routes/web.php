@@ -1,6 +1,0 @@
-<?php
-use App\Http\Controllers\LoginController;
-
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
-Route::view('/dashboard', 'dashboard')->name('dashboard');

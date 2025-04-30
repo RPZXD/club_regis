@@ -1,19 +1,54 @@
-<?php
+<?php 
 
-use Illuminate\Foundation\Application;
-use Illuminate\Http\Request;
+require_once('includes/header.php');
+require_once('config/Setting.php');
 
-define('LARAVEL_START', microtime(true));
+?>
+<body class="hold-transition sidebar-mini layout-fixed light-mode">
+<div class="wrapper">
 
-// Determine if the application is in maintenance mode...
-if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
-    require $maintenance;
-}
+    <?php require_once('includes/wrapper.php');?>
 
-// Register the Composer autoloader...
-require __DIR__.'/vendor/autoload.php';
-// Bootstrap Laravel and handle the request...
-/** @var Application $app */
-$app = require_once __DIR__.'/bootstrap/app.php';
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
 
-$app->handleRequest(Request::capture());
+  <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0"></h1>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /.content-header -->
+
+    <section class="content">
+      <div class="flex flex-col items-center justify-center min-h-[60vh] bg-white rounded-lg shadow-lg p-8 mx-auto max-w-2xl">
+        <div class="text-6xl mb-4">🎓✨</div>
+        <h2 class="text-3xl font-bold text-gray-800 mb-2 text-center">ระบบรับสมัครชุมนุม</h2>
+        <p class="text-lg text-gray-600 mb-6 text-center">
+          ยินดีต้อนรับสู่ระบบรับสมัครชุมนุมโรงเรียน!<br>
+          สมัครเข้าร่วมกิจกรรมที่คุณสนใจได้ง่ายๆ เพียงไม่กี่ขั้นตอน<br>
+          <span class="text-2xl">🤝🏫🎉</span>
+        </p>
+        <a href="register.php" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition">
+          สมัครชุมนุมเลย!
+        </a>
+      </div>
+    </section>
+    <!-- /.content -->
+  </div>
+  <!-- /.content-wrapper -->
+    <?php require_once('includes/footer.php');?>
+</div>
+<!-- ./wrapper -->
+
+
+<script>
+
+
+</script>
+<?php require_once('includes/script.php');?>
+</body>
+</html>
