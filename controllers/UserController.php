@@ -1,8 +1,8 @@
 <?php
-require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../models/Logger.php';
-require_once __DIR__ . '/../config/Database.php';
-require_once __DIR__ . '/../utils/Utils.php';
+require_once '../models/User.php';
+require_once '../models/Logger.php';
+require_once '../config/Database.php';
+require_once '../utils/Utils.php';
 
 class UserController {
     public function logout() {
@@ -15,7 +15,7 @@ class UserController {
         $studentConn = $studentDb->getConnection();
 
         $user = new \User($studentConn); // ใช้ User model แทน
-        $logger = new \Logger(__DIR__ . '/../logs/logout.json');
+        $logger = new \Logger('../logs/logout.json');
 
         // Get role if available (เหมือน login)
         $role = null;

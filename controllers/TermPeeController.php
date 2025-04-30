@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../config/Database.php';
-require_once __DIR__ . '/../models/TermPee.php';
+require_once '../config/Database.php';
+require_once '../models/TermPee.php';
 
 $action = $_GET['action'] ?? '';
 

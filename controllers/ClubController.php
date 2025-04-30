@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../models/Club.php';
+require_once '../models/Club.php';
 
 $action = $_GET['action'] ?? '';
 
@@ -8,7 +8,7 @@ if ($action === 'list') {
     $clubs = $clubModel->getAllClubsWithCurrentMembers();
 
     // ดึงชื่ออาจารย์ที่ปรึกษา (Teach_name) จาก Teach_id
-    require_once __DIR__ . '/../config/database.php';
+    require_once '../config/database.php';
     $database = new Database('phichaia_student');
     $db = $database->getConnection();
 
