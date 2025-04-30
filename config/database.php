@@ -2,11 +2,11 @@
 
 class Database {
     private $host = "localhost:3306";
-    // private $username = "root";
-    // private $password = "";
+    private $username = "root";
+    private $password = "";
         
-    private $username = "phichaia_rpz";
-    private $password = "r9u06D#e9";
+    // private $username = "phichaia_rpz";
+    // private $password = "r9u06D#e9";
 
     private $conn;
 
