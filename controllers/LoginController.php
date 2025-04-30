@@ -1,9 +1,9 @@
 <?php
 
-require_once '../models/User.php';
-require_once '../models/Logger.php';
-$databaseFile = '../config/Database.php';
-require_once '../utils/Utils.php';
+require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../models/Logger.php';
+$databaseFile = __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../utils/Utils.php';
 
 class LoginController {
     /**
