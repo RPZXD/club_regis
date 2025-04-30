@@ -112,6 +112,19 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'phichaia_student' => [
+            'driver' => 'mysql',
+            'host' => env('PHICHIA_STUDENT_DB_HOST', '127.0.0.1'),
+            'database' => env('PHICHIA_STUDENT_DB_DATABASE', 'phichaia_student'),
+            'username' => env('PHICHIA_STUDENT_DB_USERNAME', 'root'),
+            'password' => env('PHICHIA_STUDENT_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
     ],
 
     /*
