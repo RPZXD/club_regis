@@ -7,10 +7,23 @@ file_put_contents(__DIR__ . '/../logs/login_debug.log', print_r($_POST, true), F
 
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../models/Logger.php';
-require_once __DIR__ . '/../config/Database.php';
+$databaseFile = __DIR__ . '/../config/Database.php';
+if (!file_exists($databaseFile)) {
+    die("Database config file not found: $databaseFile");
+}
+require_once $databaseFile;
 require_once __DIR__ . '/../utils/Utils.php';
 
 class LoginController {
+    /**
+     * Convert absolute file path to relative URL path for frontend usage.
+     * @param string $path Absolute file path
+     * @return string Relative URL path
+     */
+    public static function pathToUrl($path) {
+        return str_replace($_SERVER['DOCUMENT_ROOT'], '', realpath($path));
+    }
+
     public function login($post) {
         $logger = new Logger(__DIR__ . '/../logs/login.json');
         $username = filter_var($post['txt_username_email'], FILTER_SANITIZE_STRING);
