@@ -1,6 +1,7 @@
 <?php
-require_once __DIR__ . '/controllers/UserController.php';
+session_start();
+session_unset();
+session_destroy();
+header('Location: login.php?logout=1');
+exit;
 
-$userController = new UserController();
-$userController->logout();
-?>

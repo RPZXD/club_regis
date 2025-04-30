@@ -1,62 +1,40 @@
-<?php
-require_once('../includes/header.php');
-require_once('../utils/Utils.php');
-
-// ตรวจสอบ session เพื่อป้องกันการเข้าถึงโดยไม่ได้ login
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-if (!isset($_SESSION['Teacher_login'])) {
+<?php 
+session_start();
+// เช็ค session และ role
+if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'ครู') {
     header('Location: ../login.php');
-    exit();
+    exit;
 }
+// Read configuration from JSON file
+$config = json_decode(file_get_contents('../config.json'), true);
+$global = $config['global'];
+
+require_once('header.php');
+
 ?>
-
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini layout-fixed light-mode">
 <div class="wrapper">
-    <?php require_once('../includes/wrapper.php'); ?>
 
-    <div class="content-wrapper">
-        <div class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1 class="m-0">Teacher Dashboard</h1>
-                    </div>
-                </div>
-            </div>
+    <?php require_once('wrapper.php');?>
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+
+  <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0"><?php echo $global['nameschool']; ?> <span class="text-blue-600">| ครู</span></h1>
+          </div>
         </div>
-        <section class="content">
+      </div>
+    </div>
+    <!-- /.content-header -->
+
+    <section class="content">
             <div class="container-fluid">
                 <!-- เนื้อหาสำหรับครู -->
-                <div class="alert alert-success">
-                    <?php
-                        // ดึงชื่อจากฐานข้อมูล phichaia_student.teacher
-                        require_once('../config/Database.php');
-                        $TeacherId = $_SESSION['user'];
-                        $db = new Database('phichaia_student');
-                        $pdo = $db->getConnection();
-                        $stmt = $pdo->prepare("SELECT Teach_name FROM teacher WHERE Teach_id = ?");
-                        $stmt->execute([$TeacherId]);
-                        $teacher = $stmt->fetch(PDO::FETCH_ASSOC);
-                        if ($teacher) {
-                            $name = $teacher['Teach_name'];
-                            $prefixes = [
-                                'ว่าที่ร้อยตรี หญิง', // ต้องมาก่อน 'ว่าที่ร้อยตรี'
-                                'ว่าที่ร้อยตรี',
-                                'นาย', 'นาง', 'นางสาว', 'Mr. ', 'Mrs. ', 'Ms. '
-                            ];
-                            foreach ($prefixes as $prefix) {
-                                if (mb_strpos($name, $prefix) === 0) {
-                                    $name = trim(mb_substr($name, mb_strlen($prefix)));
-                                    break;
-                                }
-                            }
-                            echo 'สวัสดีคุณครู ' . htmlspecialchars($name);
-                        } else {
-                            echo 'สวัสดีคุณครู ' . htmlspecialchars($TeacherId);
-                        }
-                    ?> ยินดีต้อนรับเข้าสู่ระบบ
+                <div class="alert alert-success"> ยินดีต้อนรับเข้าสู่ระบบ
                 </div>
                 <!-- คู่มือการใช้งานสำหรับครู -->
             <div class="mb-6 max-w-6xl mx-auto bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow p-6">
@@ -103,9 +81,17 @@ if (!isset($_SESSION['Teacher_login'])) {
             <!-- จบคู่มือ -->
             </div>
         </section>
-    </div>
-    <?php require_once('../includes/footer.php'); ?>
+    <!-- /.content -->
+  </div>
+  <!-- /.content-wrapper -->
+    <?php require_once('../footer.php');?>
 </div>
-<?php require_once('../includes/script.php'); ?>
+<!-- ./wrapper -->
+
+
+<script>
+
+</script>
+<?php require_once('script.php');?>
 </body>
 </html>

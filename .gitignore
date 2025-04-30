@@ -1,8 +1,4 @@
-config/Database.php
-config/Setting.php
-logs/login.json
-/logs
-/logs
-logs/login.json
-logs/logout.json
-config/database.php
+classes/DatabaseDocuments.php
+classes/DatabaseUsers.php
+classes/DocumentUploader.php
+classes/Document.php
