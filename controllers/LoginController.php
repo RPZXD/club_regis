@@ -2,7 +2,21 @@
 
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../models/Logger.php';
-require_once __DIR__ . '/../config/Database.php';
+
+// Check if the config file exists and include it
+$configFile = __DIR__ . '/../config/Database.php';
+if (file_exists($configFile)) {
+    require_once $configFile;
+} else {
+    // Try alternative paths that might exist on the server
+    $altConfigFile = '/var/www/vhosts/phichai.ac.th/club.phichai.ac.th/config/Database.php';
+    if (file_exists($altConfigFile)) {
+        require_once $altConfigFile;
+    } else {
+        die("Database configuration file not found. Please check the file exists at: $configFile");
+    }
+}
+
 require_once __DIR__ . '/../utils/Utils.php';
 
 class LoginController {
