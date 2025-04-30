@@ -41,6 +41,15 @@ if ($lastError && in_array($lastError['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, 
     echo '<strong>File:</strong> ' . htmlspecialchars($lastError['file']) . ' (Line ' . $lastError['line'] . ')';
     echo '</div>';
 }
+
+// Debug: Show request method, POST data, and session (for troubleshooting)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    echo '<div style="background:#eef;padding:10px;border:1px solid #99f;margin:10px 0;">';
+    echo '<strong>Request Method:</strong> ' . htmlspecialchars($_SERVER['REQUEST_METHOD']) . '<br>';
+    echo '<strong>POST Data:</strong> <pre>' . htmlspecialchars(print_r($_POST, true)) . '</pre>';
+    echo '<strong>Session:</strong> <pre>' . htmlspecialchars(print_r($_SESSION, true)) . '</pre>';
+    echo '</div>';
+}
 ?>
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
