@@ -55,7 +55,7 @@ redirectUser(); // Ensure this is called before any HTML output
 
               <?php 
                 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signin'])) {
-                    require_once 'controllers/LoginController.php';
+                    require_once __DIR__ . '/controllers/LoginController.php';
                     $controller = new LoginController();
                     $controller->login($_POST);
                 }
