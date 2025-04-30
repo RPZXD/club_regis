@@ -82,6 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     require_once 'controllers/LoginController.php';
                     $controller = new LoginController();
                     $controller->login($_POST);
+                    // Debug: ถ้า login() ไม่ exit หรือ redirect ให้แสดงข้อความนี้
+                    echo '<div style="background:#fcc;color:#900;padding:10px;border:1px solid #900;margin:10px 0;">';
+                    echo 'LoginController->login() returned without exit or redirect.';
+                    echo '</div>';
                     exit; // Stop further execution after login attempt
                 }
                 ?>
