@@ -32,7 +32,7 @@ require_once('config/Setting.php');
           สมัครเข้าร่วมกิจกรรมที่คุณสนใจได้ง่ายๆ เพียงไม่กี่ขั้นตอน<br>
           <span class="text-2xl">🤝🏫🎉</span>
         </p>
-        <a href="register.php" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition">
+        <a href="login.php" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition">
           สมัครชุมนุมเลย!
         </a>
       </div>
