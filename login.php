@@ -6,8 +6,8 @@ require_once('includes/header.php');
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-include_once("utils/Utils.php");
-include_once("models/Logger.php"); // Use Logger from models
+// include_once("utils/Utils.php");
+// include_once("models/Logger.php"); // Use Logger from models
 $bs = new Bootstrap();
 
 function redirectUser() {
