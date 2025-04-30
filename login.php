@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 ob_start(); // Start output buffering
 require_once('includes/header.php');
 if (session_status() === PHP_SESSION_NONE) {
@@ -63,16 +65,15 @@ redirectUser(); // Ensure this is called before any HTML output
                     $controller = new LoginController();
                     $controller->login($_POST);
                 }
-                ?>
+                ?>.
 
-
-                          
 
                     <div class="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
                         <h2 class="text-2xl font-semibold text-center text-gray-700 mb-6">เข้าสู่ระบบ</h2>
 
                         <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']) ?>" method="POST" class="space-y-4">
                             
+
                             <div>
                                 <label class="block text-gray-600 mb-1">ชื่อผู้ใช้งาน</label>
                                 <input type="text" name="txt_username_email" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="กรุณากรอกชื่อผู้ใช้งาน...">
