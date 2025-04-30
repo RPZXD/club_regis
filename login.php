@@ -18,6 +18,9 @@ function redirectUser() {
         'Student_login' => 'student/index.php'
     ];
 
+    // Debug: Output session variables for troubleshooting
+    echo "<!-- SESSION: " . htmlspecialchars(json_encode($_SESSION)) . " -->";
+
     foreach ($roles as $sessionKey => $redirectPath) {
         if (isset($_SESSION[$sessionKey])) {
             header("Location: $redirectPath");
@@ -32,6 +35,7 @@ redirectUser(); // Ensure this is called before any HTML output
 <div class="wrapper">
 
     <?php require_once('includes/wrapper.php');?>
+
 
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper">
@@ -63,6 +67,7 @@ redirectUser(); // Ensure this is called before any HTML output
 
 
                           
+
                     <div class="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
                         <h2 class="text-2xl font-semibold text-center text-gray-700 mb-6">เข้าสู่ระบบ</h2>
 
