@@ -11,7 +11,7 @@ function createNavItem($href, $iconClass, $text) {
 
 if (isset($_SESSION['Teacher_login'])) {
     echo createNavItem('index.php', 'fa-home', 'หน้าหลัก');
-    echo createNavItem('club_list.php', 'fa-list-check', 'รายชื่อชุมนุม');
+    echo createNavItem('club_list.php', 'fas fa-list-check', 'รายชื่อชุมนุม');
     // เพิ่มเมนูเฉพาะครู
     echo createNavItem('club_members.php', 'fa-user-tie', 'จัดการนักเรียน');
     echo createNavItem('logout.php', 'fa-sign-out-alt', 'ออกจากระบบ');
