@@ -2,7 +2,7 @@
 
   <!-- Preloader -->
   <div class="preloader flex flex-col justify-center items-center h-screen w-full fixed top-0 left-0 bg-gray-100 z-50">
-      <img class="animate-shake h-36 w-36" src="/club.phichai.ac.th/dist/img/logo-phicha.png" alt="AdminLTE Logo">
+      <img class="animate-shake h-36 w-36" src="/../dist/img/logo-phicha.png" alt="AdminLTE Logo">
       <h3 class="mt-4 text-center"><?php echo $setting->getPageTitle(); ?></h3>
   </div>
 
@@ -38,7 +38,7 @@
   <aside class="main-sidebar bg-gray-900 text-white">
     <!-- Brand Logo -->
     <a href="index.php" class="brand-link flex items-center">
-      <img src="/club.phichai.ac.th/dist/img/logo-phicha.png" alt="AdminLTE Logo" class="brand-image rounded-full opacity-80">
+      <img src="/../dist/img/logo-phicha.png" alt="AdminLTE Logo" class="brand-image rounded-full opacity-80">
       <span class="brand-text font-light ml-2"><?php echo $setting->getPageTitleShort(); ?></span>
     </a>
 
