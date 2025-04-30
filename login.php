@@ -32,6 +32,15 @@ function redirectUser() {
 }
 
 redirectUser(); // Ensure this is called before any HTML output
+
+// Show last PHP error if exists
+$lastError = error_get_last();
+if ($lastError && in_array($lastError['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+    echo '<div style="background:#fee;color:#900;padding:10px;border:1px solid #900;margin:10px 0;">';
+    echo '<strong>PHP Error:</strong> ' . htmlspecialchars($lastError['message']) . '<br>';
+    echo '<strong>File:</strong> ' . htmlspecialchars($lastError['file']) . ' (Line ' . $lastError['line'] . ')';
+    echo '</div>';
+}
 ?>
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
