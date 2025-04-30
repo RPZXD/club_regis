@@ -30,51 +30,51 @@
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 
 <!-- jQuery UI 1.11.4 -->
-<script src="/club_regis/plugins/jquery-ui/jquery-ui.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/jquery-ui/jquery-ui.min.js"></script>
 <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
 <!-- DataTables  & Plugins -->
-<script src="/club_regis/plugins/datatables/jquery.dataTables.min.js"></script>
-<script src="/club_regis/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
-<script src="/club_regis/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
-<script src="/club_regis/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
-<script src="/club_regis/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
-<script src="/club_regis/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
-<script src="/club_regis/plugins/jszip/jszip.min.js"></script>
-<script src="/club_regis/plugins/pdfmake/pdfmake.min.js"></script>
-<script src="/club_regis/plugins/pdfmake/vfs_fonts.js"></script>
-<script src="/club_regis/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
-<script src="/club_regis/plugins/datatables-buttons/js/buttons.print.min.js"></script>
-<script src="/club_regis/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/jszip/jszip.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/pdfmake/pdfmake.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/pdfmake/vfs_fonts.js"></script>
+<script src="/club.phichai.ac.th/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
 <!-- SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.js"></script>
 
-<script src="/club_regis/plugins/chart.js/Chart.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/chart.js/Chart.min.js"></script>
 <!-- Bootstrap 4 -->
-<script src="/club_regis/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 <!-- ChartJS -->
-<script src="/club_regis/plugins/chart.js/Chart.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/chart.js/Chart.min.js"></script>
 <!-- Sparkline -->
-<script src="/club_regis/plugins/sparklines/sparkline.js"></script>
+<script src="/club.phichai.ac.th/plugins/sparklines/sparkline.js"></script>
 <!-- JQVMap -->
-<script src="/club_regis/plugins/jqvmap/jquery.vmap.min.js"></script>
-<script src="/club_regis/plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
+<script src="/club.phichai.ac.th/plugins/jqvmap/jquery.vmap.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
 <!-- jQuery Knob Chart -->
-<script src="/club_regis/plugins/jquery-knob/jquery.knob.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/jquery-knob/jquery.knob.min.js"></script>
 <!-- daterangepicker -->
-<script src="/club_regis/plugins/moment/moment.min.js"></script>
-<script src="/club_regis/plugins/daterangepicker/daterangepicker.js"></script>
+<script src="/club.phichai.ac.th/plugins/moment/moment.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/daterangepicker/daterangepicker.js"></script>
 <!-- Tempusdominus Bootstrap 4 -->
-<script src="/club_regis/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
 <!-- Summernote -->
-<script src="/club_regis/plugins/summernote/summernote-bs4.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/summernote/summernote-bs4.min.js"></script>
 <!-- overlayScrollbars -->
-<script src="/club_regis/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
+<script src="/club.phichai.ac.th/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
 <!-- AdminLTE App -->
-<script src="/club_regis/dist/js/adminlte.js"></script>
+<script src="/club.phichai.ac.th/dist/js/adminlte.js"></script>
 <!-- AdminLTE for demo purposes -->
 
 <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
-<script src="/club_regis/dist/js/pages/dashboard.js"></script>
+<script src="/club.phichai.ac.th/dist/js/pages/dashboard.js"></script>
 <!-- DataTables JS -->
 <script src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"></script>
 <!-- DataTables Buttons JS -->
