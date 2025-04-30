@@ -5,3 +5,4 @@ logs/login.json
 /logs
 logs/login.json
 logs/logout.json
+config/database.php
