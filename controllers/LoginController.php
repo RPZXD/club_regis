@@ -2,17 +2,11 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Debug: Log POST data to a file for troubleshooting
-file_put_contents(__DIR__ . '/../logs/login_debug.log', print_r($_POST, true), FILE_APPEND);
 
-require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../models/Logger.php';
-$databaseFile = __DIR__ . '/../config/Database.php';
-if (!file_exists($databaseFile)) {
-    die("Database config file not found: $databaseFile");
-}
-require_once $databaseFile;
-require_once __DIR__ . '/../utils/Utils.php';
+require_once '../models/User.php';
+require_once '../models/Logger.php';
+$databaseFile = '../config/Database.php';
+require_once '../utils/Utils.php';
 
 class LoginController {
     /**
@@ -25,7 +19,7 @@ class LoginController {
     }
 
     public function login($post) {
-        $logger = new Logger(__DIR__ . '/../logs/login.json');
+        $logger = new Logger('../logs/login.json');
         $username = filter_var($post['txt_username_email'], FILTER_SANITIZE_STRING);
         $password = filter_var($post['txt_password'], FILTER_SANITIZE_STRING);
         $role = filter_var($post['txt_role'], FILTER_SANITIZE_STRING);
