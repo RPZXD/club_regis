@@ -1,5 +1,5 @@
 <?php
-require_once '../config/Database.php';
+require_once __DIR__ . '/../config/Database.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -23,7 +23,7 @@ if ($action === 'register' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $db = (new Database('phichaia_club'))->getConnection();
 
     // ดึง term/pee ปัจจุบัน
-    require_once '../models/TermPee.php';
+    require_once __DIR__ . '/../models/TermPee.php';
     $termPeeModel = new TermPeeModel();
     $termpee = $termPeeModel->getTermPee();
     $term = $termpee['term'];
