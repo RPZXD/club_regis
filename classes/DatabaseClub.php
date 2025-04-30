@@ -38,12 +38,13 @@ class DatabaseClub
         }
     }
 
-    public function getTeacherByUsername($username)
+
+    public function getCurrentMembers($club_id)
     {
-        $sql = "SELECT * FROM teacher WHERE Teach_id = :username OR Teach_name = :username";
+        $sql = "SELECT * FROM club_members WHERE club_id = :club_id AND status = 'active'";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['username' => $username]);
-        return $stmt->fetch();
+        $stmt->execute(['club_id' => $club_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getPDO()

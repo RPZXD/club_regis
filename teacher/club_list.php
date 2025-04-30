@@ -140,7 +140,7 @@ require_once('header.php');
                             <div class="mb-3">
                                 <label class="block font-medium mb-1">ระดับชั้นที่เปิด</label>
                                 <div id="edit-grade-levels-checkboxes" class="flex flex-wrap gap-3">
-                                    <label class="inline-flex items-center space-x-2">
+                                    <label class="inline-flex items-center space-x-2"></label>
                                         <input type="checkbox" name="grade_levels[]" value="ม.1" class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
                                         <span class="text-gray-700">ม.1</span>
                                     </label>
@@ -269,18 +269,16 @@ $(document).ready(function() {
             { 
                 "data": null,
                 "render": function(data, type, row) {
-                    // Progress bar in จำนวนที่รับสมัคร
-                    var percent = 0;
-                    if (parseInt(row.max_members) > 0) {
-                        percent = Math.round((parseInt(row.current_members) / parseInt(row.max_members)) * 100);
-                        if (percent > 100) percent = 100;
-                    }
+                    var current = row.current_members_count ? parseInt(row.current_members_count) : 0;
+                    var max = row.max_members ? parseInt(row.max_members) : 0;
+                    var percent = (max > 0) ? Math.round((current / max) * 100) : 0;
+                    if (percent > 100) percent = 100;
                     var progressBar = `
                         <div style="min-width:100px">
                             <div style="background:#e5e7eb;border-radius:4px;height:16px;overflow:hidden;">
-                                <div style="background:#2563eb;width:${percent}%;height:100%;transition:width 0.3s;" title="${row.current_members} / ${row.max_members}"></div>
+                                <div style="background:#2563eb;width:${percent}%;height:100%;transition:width 0.3s;" title="${current} / ${max}"></div>
                             </div>
-                            <div style="font-size:0.85em;color:#444;text-align:right;">${row.current_members} / ${row.max_members}</div>
+                            <div style="font-size:0.85em;color:#444;text-align:right;">${current} / ${max}</div>
                         </div>
                     `;
                     return progressBar;
@@ -290,18 +288,13 @@ $(document).ready(function() {
             { 
                 "data": null,
                 "render": function(data, type, row) {
-                    // ปุ่มแก้ไข/ลบ เฉพาะของคุณครูเอง
                     var html = '';
                     var currentUser = "<?php echo $_SESSION['username']; ?>";
                     if (row.advisor_teacher == currentUser) {
                         html += '<button class="edit-btn bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1 rounded mr-1" data-id="'+row.club_id+'">แก้ไข</button>';
                         html += '<button class="delete-btn bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded" data-id="'+row.club_id+'">ลบ</button>';
                     } else {
-                        if (parseInt(row.current_members) >= parseInt(row.max_members)) {
-                            html = '<span class="text-red-600 font-semibold">เต็มแล้ว</span>';
-                        } else {
-                            html = '<span class="text-green-600 font-semibold">ว่าง</span>';
-                        }
+                        html = '<span class="text-gray-600 font-semibold">-</span>';
                     }
                     return html;
                 },

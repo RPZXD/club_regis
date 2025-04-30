@@ -25,7 +25,7 @@ switch ($action) {
         foreach ($clubs as &$club) {
             $advisor = $dbUsers->getTeacherByUsername($club['advisor_teacher']);
             $club['advisor_teacher_name'] = $advisor ? $advisor['Teach_name'] : $club['advisor_teacher'];
-            if (!isset($club['current_members'])) $club['current_members'] = 0;
+            $club['current_members_count'] = $clubModel->getCurrentMembers($club['club_id']);
         }
         echo json_encode(['data' => $clubs]);
         exit;
@@ -36,13 +36,17 @@ switch ($action) {
         $grade_levels = $_POST['grade_levels'] ?? '';
         $max_members = $_POST['max_members'] ?? 0;
         $advisor_teacher = $_SESSION['username'] ?? 'unknown';
+        $term = $_POST['term'] ?? 1;
+        $year = $_POST['year'] ?? date('Y');
 
         $data = [
             'club_name' => $club_name,
             'description' => $description,
             'grade_levels' => $grade_levels,
             'max_members' => $max_members,
-            'advisor_teacher' => $advisor_teacher
+            'advisor_teacher' => $advisor_teacher,
+            'term' => $term,
+            'year' => $year
         ];
         try {
             $clubModel->create($data);
