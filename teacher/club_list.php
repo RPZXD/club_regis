@@ -108,7 +108,7 @@ require_once('header.php');
                                 <label class="block font-medium mb-1">จำนวนที่รับสมัคร</label>
                                 <input type="number" class="border rounded w-full px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400" name="max_members" required>
                             </div>
-                            <input type="hidden" name="advisor_teacher" value="<?php echo $_SESSION['user']; ?>">
+                            <input type="hidden" name="advisor_teacher" value="<?php echo $_SESSION['username']; ?>">
                             <div class="flex justify-end">
                                 <button type="button" id="cancel-modal-btn" class="mr-2 px-4 py-1 rounded bg-gray-300 hover:bg-gray-400">ยกเลิก</button>
                                 <button type="submit" class="px-4 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">บันทึก</button>
@@ -118,6 +118,67 @@ require_once('header.php');
                 </div>
             </div>
             <!-- จบ Modal -->
+
+            <!-- Modal แก้ไขชุมนุม -->
+            <div id="edit-club-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+                <div class="bg-white rounded-lg shadow-lg w-full max-w-md">
+                    <div class="flex justify-between items-center border-b px-4 py-2">
+                        <h3 class="text-lg font-semibold">แก้ไขข้อมูลชุมนุม</h3>
+                        <button id="close-edit-modal-btn" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                    </div>
+                    <div class="p-4">
+                        <form id="edit-club-form">
+                            <input type="hidden" id="edit_club_id" name="club_id">
+                            <div class="mb-3">
+                                <label class="block font-medium mb-1">ชื่อชุมนุม</label>
+                                <input type="text" id="edit_club_name" class="border rounded w-full px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400" name="club_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="block font-medium mb-1">รายละเอียด</label>
+                                <textarea id="edit_description" class="border rounded w-full px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400" rows="4" name="description" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="block font-medium mb-1">ระดับชั้นที่เปิด</label>
+                                <div id="edit-grade-levels-checkboxes" class="flex flex-wrap gap-3">
+                                    <label class="inline-flex items-center space-x-2">
+                                        <input type="checkbox" name="grade_levels[]" value="ม.1" class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                        <span class="text-gray-700">ม.1</span>
+                                    </label>
+                                    <label class="inline-flex items-center space-x-2">
+                                        <input type="checkbox" name="grade_levels[]" value="ม.2" class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                        <span class="text-gray-700">ม.2</span>
+                                    </label>
+                                    <label class="inline-flex items-center space-x-2">
+                                        <input type="checkbox" name="grade_levels[]" value="ม.3" class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                        <span class="text-gray-700">ม.3</span>
+                                    </label>
+                                    <label class="inline-flex items-center space-x-2">
+                                        <input type="checkbox" name="grade_levels[]" value="ม.4" class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                        <span class="text-gray-700">ม.4</span>
+                                    </label>
+                                    <label class="inline-flex items-center space-x-2">
+                                        <input type="checkbox" name="grade_levels[]" value="ม.5" class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                        <span class="text-gray-700">ม.5</span>
+                                    </label>
+                                    <label class="inline-flex items-center space-x-2">
+                                        <input type="checkbox" name="grade_levels[]" value="ม.6" class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                        <span class="text-gray-700">ม.6</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="block font-medium mb-1">จำนวนที่รับสมัคร</label>
+                                <input type="number" id="edit_max_members" class="border rounded w-full px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400" name="max_members" required>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="button" id="cancel-edit-modal-btn" class="mr-2 px-4 py-1 rounded bg-gray-300 hover:bg-gray-400">ยกเลิก</button>
+                                <button type="submit" class="px-4 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">บันทึก</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- จบ Modal แก้ไข -->
 
             <div class="card">  
                 
@@ -231,7 +292,7 @@ $(document).ready(function() {
                 "render": function(data, type, row) {
                     // ปุ่มแก้ไข/ลบ เฉพาะของคุณครูเอง
                     var html = '';
-                    var currentUser = "<?php echo $_SESSION['user']; ?>";
+                    var currentUser = "<?php echo $_SESSION['username']; ?>";
                     if (row.advisor_teacher == currentUser) {
                         html += '<button class="edit-btn bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1 rounded mr-1" data-id="'+row.club_id+'">แก้ไข</button>';
                         html += '<button class="delete-btn bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded" data-id="'+row.club_id+'">ลบ</button>';

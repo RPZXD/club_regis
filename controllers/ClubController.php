@@ -5,25 +5,26 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/../classes/DatabaseClub.php';
 require_once __DIR__ . '/../classes/DatabaseUsers.php';
+require_once __DIR__ . '/../models/Club.php';
 
 use App\DatabaseClub;
 use App\DatabaseUsers;
+use App\Models\Club;
 
 $db = new DatabaseClub();
 $dbUsers = new DatabaseUsers();
+$pdo = $db->getPDO(); // สมมติว่า DatabaseClub มีเมธอด getPDO()
+$clubModel = new Club($pdo);
 
 $action = isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : '');
 
 switch ($action) {
     case 'list':
         // ดึงข้อมูลชุมนุมทั้งหมด
-        $stmt = $db->query("SELECT * FROM clubs");
-        $clubs = $stmt->fetchAll();
-        // เพิ่มชื่อครูที่ปรึกษา (ถ้ามี)
+        $clubs = $clubModel->getAll();
         foreach ($clubs as &$club) {
             $advisor = $dbUsers->getTeacherByUsername($club['advisor_teacher']);
             $club['advisor_teacher_name'] = $advisor ? $advisor['Teach_name'] : $club['advisor_teacher'];
-            // หากไม่มี current_members ในฐานข้อมูล ให้กำหนดเป็น 0
             if (!isset($club['current_members'])) $club['current_members'] = 0;
         }
         echo json_encode(['data' => $clubs]);
@@ -36,17 +37,15 @@ switch ($action) {
         $max_members = $_POST['max_members'] ?? 0;
         $advisor_teacher = $_SESSION['username'] ?? 'unknown';
 
-        $sql = "INSERT INTO clubs (club_name, description, grade_levels, max_members, current_members, advisor_teacher, status)
-                VALUES (:club_name, :description, :grade_levels, :max_members, 0, :advisor_teacher, 'active')";
-        $params = [
+        $data = [
             'club_name' => $club_name,
             'description' => $description,
             'grade_levels' => $grade_levels,
-            'max_members' => intval($max_members),
+            'max_members' => $max_members,
             'advisor_teacher' => $advisor_teacher
         ];
         try {
-            $db->query($sql, $params);
+            $clubModel->create($data);
             echo json_encode(['success' => true]);
         } catch (\Exception $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -61,24 +60,20 @@ switch ($action) {
         $max_members = $_POST['max_members'] ?? 0;
         $advisor_teacher = $_SESSION['username'] ?? '';
 
-        // ตรวจสอบสิทธิ์
-        $stmt = $db->query("SELECT * FROM clubs WHERE club_id = :club_id", ['club_id' => $club_id]);
-        $club = $stmt->fetch();
+        $club = $clubModel->getById($club_id);
         if (!$club || $club['advisor_teacher'] !== $advisor_teacher) {
             echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์แก้ไข']);
             exit;
         }
 
-        $sql = "UPDATE clubs SET club_name = :club_name, description = :description, grade_levels = :grade_levels, max_members = :max_members WHERE club_id = :club_id";
-        $params = [
-            'club_id' => $club_id,
+        $data = [
             'club_name' => $club_name,
             'description' => $description,
             'grade_levels' => $grade_levels,
-            'max_members' => intval($max_members)
+            'max_members' => $max_members
         ];
         try {
-            $db->query($sql, $params);
+            $clubModel->update($club_id, $data);
             echo json_encode(['success' => true]);
         } catch (\Exception $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -89,17 +84,14 @@ switch ($action) {
         $club_id = $_POST['club_id'] ?? '';
         $advisor_teacher = $_SESSION['username'] ?? '';
 
-        // ตรวจสอบสิทธิ์
-        $stmt = $db->query("SELECT * FROM clubs WHERE club_id = :club_id", ['club_id' => $club_id]);
-        $club = $stmt->fetch();
+        $club = $clubModel->getById($club_id);
         if (!$club || $club['advisor_teacher'] !== $advisor_teacher) {
             echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์ลบ']);
             exit;
         }
 
-        $sql = "DELETE FROM clubs WHERE club_id = :club_id";
         try {
-            $db->query($sql, ['club_id' => $club_id]);
+            $clubModel->delete($club_id);
             echo json_encode(['success' => true]);
         } catch (\Exception $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);

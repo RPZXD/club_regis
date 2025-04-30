@@ -45,4 +45,9 @@ class DatabaseClub
         $stmt->execute(['username' => $username]);
         return $stmt->fetch();
     }
+
+    public function getPDO()
+    {
+        return $this->pdo;
+    }
 }
