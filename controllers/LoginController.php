@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../models/Logger.php';
-$databaseFile = __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../config/Database.php'; // <-- Add this line
 require_once __DIR__ . '/../utils/Utils.php';
 
 class LoginController {

@@ -1,6 +1,6 @@
 <?php
-require_once('../models/ClubMember.php');
-require_once('../models/Club.php');
+require_once(__DIR__ . '/../models/ClubMember.php');
+require_once(__DIR__ . '/../models/Club.php');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
