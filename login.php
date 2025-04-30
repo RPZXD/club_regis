@@ -64,8 +64,9 @@ redirectUser(); // Ensure this is called before any HTML output
                     require_once 'controllers/LoginController.php';
                     $controller = new LoginController();
                     $controller->login($_POST);
+                    exit; // Stop further execution after login attempt
                 }
-                ?>.
+                ?>
 
 
                     <div class="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
