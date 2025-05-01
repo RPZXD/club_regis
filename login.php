@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md" data-aos="fade-up">
             <div class="flex flex-col items-center mb-4">
                 <?php if (!empty($pageConfig['logoLink'])): ?>
-                    <img src="dist/img/<?php echo htmlspecialchars($pageConfig['logoLink']); ?>" alt="logo" class="h-14 w-14 mb-2 rounded-full bg-white p-1 shadow" />
+                    <img src="<?php echo htmlspecialchars($pageConfig['logoLink']); ?>" alt="logo" class="h-14 w-14 mb-2 rounded-full bg-white p-1 shadow" />
                 <?php endif; ?>
                 <span class="text-blue-700 font-bold text-lg"><?php echo htmlspecialchars($pageConfig['nameschool']); ?></span>
             </div>
