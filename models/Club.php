@@ -71,4 +71,11 @@ class Club
         $row = $stmt->fetch();
         return $row ? intval($row['cnt']) : 0;
     }
+
+    public function getByAdvisor($advisor_teacher)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM clubs WHERE advisor_teacher = :advisor_teacher");
+        $stmt->execute(['advisor_teacher' => $advisor_teacher]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
