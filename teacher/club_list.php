@@ -197,7 +197,7 @@ require_once('header.php');
                                 <th class="py-2 px-4 text-center border-b">ครูที่ปรึกษาชุมนุม</th>
                                 <th class="py-2 px-4 text-center border-b">ระดับชั้นที่เปิด</th>
                                 <th class="py-2 px-4 text-center border-b">จำนวนที่รับสมัคร</th>
-                                <th class="py-2 px-4 text-center border-b">สถานะ</th>
+                                <th class="py-2 px-4 text-center border-b">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="club-table-body">
