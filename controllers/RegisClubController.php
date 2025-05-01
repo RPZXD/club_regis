@@ -1,6 +1,7 @@
 <?php
 require_once('../classes/DatabaseClub.php');
 require_once('../models/RegisClub.php');
+require_once('../models/TermPee.php');
 
 use App\DatabaseClub;
 use App\Models\RegisClub;
@@ -18,8 +19,16 @@ $student_id = $user['Stu_id'] ?? null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $club_id = $_POST['club_id'] ?? null;
-    $year = $_POST['year'] ?? date('Y');
-    $term = $_POST['term'] ?? 1;
+
+    // ใช้ TermPee หากไม่ได้ส่ง year/term มา
+    if (isset($_POST['year']) && isset($_POST['term'])) {
+        $year = $_POST['year'];
+        $term = $_POST['term'];
+    } else {
+        $termPee = TermPee::getCurrent();
+        $year = $termPee->pee;
+        $term = $termPee->term;
+    }
 
     if (!$student_id || !$club_id) {
         echo json_encode(['success' => false, 'message' => 'ข้อมูลไม่ครบถ้วน']);

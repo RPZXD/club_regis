@@ -11,7 +11,7 @@ $global = $config['global'];
 $user = $_SESSION['user'];
 $teacher_id = $user['Teach_id'] ?? $_SESSION['Teach_id'];
 
-
+require_once('../models/TermPee.php');
 
 require_once('header.php');
 ?>
@@ -98,7 +98,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = document.getElementById('members-table-body');
         tbody.innerHTML = '';
         if (!clubId) return;
-        fetch('../controllers/ClubController.php?action=members&club_id=' + encodeURIComponent(clubId))
+        // ดึง term/year ปัจจุบันจาก ClubController (ใช้ promise chain)
+        fetch('../controllers/ClubController.php?action=list_by_advisor')
+            .then(res => res.json())
+            .then(data => {
+                // สมมติว่ามี term/year ใน response
+                const term = data.term;
+                const year = data.year;
+                // ส่ง term/year ไปกับ request members
+                return fetch('../controllers/ClubController.php?action=members&club_id=' + encodeURIComponent(clubId) + '&term=' + encodeURIComponent(term) + '&year=' + encodeURIComponent(year));
+            })
             .then(res => res.json())
             .then(data => {
                 if (data.success && Array.isArray(data.members)) {
