@@ -14,6 +14,6 @@ function createNavItem($href, $iconClass, $text) {
     echo createNavItem('club_list.php', 'bi-list-check', 'รายชื่อชุมนุม');
     // เพิ่มเมนูเฉพาะครู
     echo createNavItem('club_members.php', 'bi-person-badge', 'จัดการนักเรียน');
-    echo createNavItem('/club.phichai.ac.th/logout.php', 'bi-box-arrow-right', 'ออกจากระบบ');
+    echo createNavItem('../logout.php', 'bi-box-arrow-right', 'ออกจากระบบ');
 
 ?>
