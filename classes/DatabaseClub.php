@@ -38,10 +38,9 @@ class DatabaseClub
         }
     }
 
-
     public function getCurrentMembers($club_id)
     {
-        $sql = "SELECT * FROM club_members WHERE club_id = :club_id AND status = 'active'";
+        $sql = "SELECT * FROM club_members WHERE club_id = :club_id";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['club_id' => $club_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

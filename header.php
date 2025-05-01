@@ -7,7 +7,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?php echo $global['nameschool']; ?></title>
+  <title><?php echo $global['pageTitle'].' | '. $global['nameschool']; ?></title>
 
     <!-- Google Font: Mali -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mali:wght@200;300;400;500;600;700&display=swap">
