@@ -11,20 +11,23 @@ require_once('header.php');
 <!-- Tailwind CSS CDN -->
 
 
-<body class="hold-transition sidebar-mini layout-fixed light-mode bg-gray-100">
+<body class="hold-transition sidebar-mini layout-fixed light-mode">
 <div class="wrapper">
     <?php require_once('wrapper.php');?>
 
-    <div class="content-wrapper bg-white rounded-lg shadow-lg mt-6 mx-auto max-w-6xl">
+    <div class="content-wrapper">
         <div class="content-header">
             <div class="container-fluid">
-                <h5 class="m-0 py-4 text-2xl font-bold text-center text-blue-700">รายงานกิจกรรมชมรม</h5>
+                <h5 class="m-0">รายงานกิจกรรมชมรม</h5>
             </div>
         </div>
         <section class="content">
             <div class="container-fluid">
+                <div class="card">
+
+
                 <!-- Nav tabs -->
-                <ul class="flex border-b mb-4" id="reportTabs" role="tablist">
+                <ul class="flex border-b my-4" id="reportTabs" role="tablist">
                     <li class="mr-2">
                         <a class="nav-link active inline-block px-6 py-2 rounded-t-lg font-semibold text-blue-700 bg-blue-100 transition-all duration-200 ease-in-out hover:bg-blue-200 focus:outline-none" id="room-tab" data-toggle="tab" href="#room" role="tab" aria-controls="room" aria-selected="true">
                             <svg class="inline w-5 h-5 mr-1 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 17l4 4 4-4m-4-5v9"></path><path d="M20.24 12.24A9 9 0 1 0 21 12"></path></svg>
@@ -41,6 +44,12 @@ require_once('header.php');
                         <a class="nav-link inline-block px-6 py-2 rounded-t-lg font-semibold text-gray-700 bg-gray-100 transition-all duration-200 ease-in-out hover:bg-blue-100 focus:outline-none" id="overview-tab" data-toggle="tab" href="#overview" role="tab" aria-controls="overview" aria-selected="false">
                             <svg class="inline w-5 h-5 mr-1 text-yellow-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 12l2 2 4-4"></path></svg>
                             ภาพรวมทั้งโรงเรียน
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link inline-block px-6 py-2 rounded-t-lg font-semibold text-gray-700 bg-gray-100 transition-all duration-200 ease-in-out hover:bg-blue-100 focus:outline-none" id="club-tab" data-toggle="tab" href="#club" role="tab" aria-controls="club" aria-selected="false">
+                            <svg class="inline w-5 h-5 mr-1 text-purple-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 0v8"></path></svg>
+                            รายชุมนุม
                         </a>
                     </li>
                 </ul>
@@ -102,8 +111,19 @@ require_once('header.php');
                     <div class="tab-pane fade animate-fade-in" id="overview" role="tabpanel" aria-labelledby="overview-tab">
                         <!-- เนื้อหาภาพรวมทั้งโรงเรียน -->
                         <div class="p-6 bg-yellow-50 rounded-lg shadow-inner transition-all duration-300">
-                            <p class="text-lg font-medium text-yellow-800">รายงานภาพรวมทั้งโรงเรียน</p>
-                            <div class="mt-4 text-gray-600">[เนื้อหาหรือกราฟภาพรวม]</div>
+                            <p class="text-lg font-medium text-yellow-800 mb-4">รายงานภาพรวมทั้งโรงเรียน</p>
+                            <div id="overview-table-container">
+                                <div class="text-gray-400 text-center py-8">กำลังโหลดข้อมูล...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade animate-fade-in" id="club" role="tabpanel" aria-labelledby="club-tab">
+                        <!-- เนื้อหารายชุมนุม -->
+                        <div class="p-6 bg-purple-50 rounded-lg shadow-inner transition-all duration-300">
+                            <p class="text-lg font-medium text-purple-800 mb-4">รายงานตามชุมนุม</p>
+                            <div id="club-table-container">
+                                <div class="text-gray-400 text-center py-8">กำลังโหลดข้อมูล...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -155,274 +175,10 @@ document.querySelectorAll('.tab-pane').forEach(pane => {
     opacity: 1;
 }
 </style>
-<script>
-// ตัวอย่างข้อมูลห้อง (ควร fetch จาก backend จริง)
-const roomsByLevel = {
-    "ม.1": [1,2,3,4,5,6,7,8,9,10,11,12],
-    "ม.2": [1,2,3,4,5,6,7,8,9,10,11,12],
-    "ม.3": [1,2,3,4,5,6,7,8,9,10,11,12],
-    "ม.4": [1,2,3,4,5,6,7],
-    "ม.5": [1,2,3,4,5,6,7],
-    "ม.6": [1,2,3,4,5,6,7]
-};
-
-const selectLevel = document.getElementById('select-level');
-const selectRoom = document.getElementById('select-room');
-const tableContainer = document.getElementById('room-table-container');
-
-selectLevel.addEventListener('change', function() {
-    const level = this.value;
-    selectRoom.innerHTML = '<option value="">-- เลือกห้อง --</option>';
-    if (roomsByLevel[level]) {
-        roomsByLevel[level].forEach(room => {
-            selectRoom.innerHTML += `<option value="${room}">${room}</option>`;
-        });
-        selectRoom.disabled = false;
-    } else {
-        selectRoom.disabled = true;
-    }
-    tableContainer.innerHTML = '<div class="text-gray-400 text-center py-8">กรุณาเลือกชั้นและห้อง</div>';
-});
-
-selectRoom.addEventListener('change', function() {
-    const level = selectLevel.value;
-    const room = this.value;
-    if (level && room) {
-        fetchRoomData(level, room);
-    } else {
-        tableContainer.innerHTML = '<div class="text-gray-400 text-center py-8">กรุณาเลือกชั้นและห้อง</div>';
-    }
-});
-
-function fetchRoomData(level, room) {
-    tableContainer.innerHTML = '<div class="text-blue-400 text-center py-8 animate-pulse">กำลังโหลดข้อมูล...</div>';
-    fetch('api/fetch_room_report.php?level=' + encodeURIComponent(level) + '&room=' + encodeURIComponent(room))
-        .then(res => res.json())
-        .then(data => {
-            if (Array.isArray(data) && data.length > 0) {
-                let html = `
-                <div class="overflow-x-auto">
-                <table class="min-w-full bg-white rounded shadow text-sm" id="room-report-table">
-                    <thead>
-                        <tr class="bg-blue-200 text-blue-900">
-                            <th class="px-4 py-2 text-left">#</th>
-                            <th class="px-4 py-2 text-left">เลขประจำตัว</th>
-                            <th class="px-4 py-2 text-left">ชื่อ-สกุล</th>
-                            <th class="px-4 py-2 text-left">ชั้น/ห้อง</th>
-                            <th class="px-4 py-2 text-left">เลขที่</th>
-                            <th class="px-4 py-2 text-left">ชุมนุมที่สมัคร</th>
-                            <th class="px-4 py-2 text-left">ครูที่ปรึกษาชุมนุม</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                `;
-                data.forEach((row, idx) => {
-                    html += `
-                        <tr class="hover:bg-blue-50">
-                            <td class="px-4 py-2">${idx+1}</td>
-                            <td class="px-4 py-2">${row.student_id}</td>
-                            <td class="px-4 py-2">${row.fullname}</td>
-                            <td class="px-4 py-2">${row.level}/${row.room}</td>
-                            <td class="px-4 py-2">${row.number}</td>
-                            <td class="px-4 py-2">${row.club}</td>
-                            <td class="px-4 py-2">${row.advisor}</td>
-                        </tr>
-                    `;
-                });
-                html += `
-                    </tbody>
-                </table>
-                </div>
-                `;
-                tableContainer.innerHTML = html;
-                // Optional: DataTables init
-                if (window.jQuery && window.jQuery.fn.dataTable) {
-                    $('#room-report-table').DataTable({
-                        "language": {
-                            "lengthMenu": "แสดง _MENU_ แถว",
-                            "zeroRecords": "ไม่พบข้อมูล",
-                            "info": "แสดง _START_ ถึง _END_ จากทั้งหมด _TOTAL_ แถว",
-                            "infoEmpty": "ไม่มีข้อมูล",
-                            "infoFiltered": "(กรองจาก _MAX_ แถว)",
-                            "search": "ค้นหา:",
-                            "paginate": {
-                                "first": "หน้าแรก",
-                                "last": "หน้าสุดท้าย",
-                                "next": "ถัดไป",
-                                "previous": "ก่อนหน้า"
-                            }
-                        },
-                        "order": [[0, "asc"]],
-                        "pageLength": 10,
-                        "lengthMenu": [5, 10, 25, 50, 100],
-                        "pagingType": "simple",
-                        "searching": true,
-                        "info": true,
-                        "autoWidth": false,
-                        "responsive": true,
-                        dom: '<"flex flex-wrap items-center justify-between mb-2"Bf>rt<"flex flex-wrap items-center justify-between mt-2"lip>',
-                        buttons: [
-                            {
-                                extend: 'copy',
-                                text: 'คัดลอก',
-                                className: 'bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-3 rounded shadow mr-2 mb-2'
-                            },
-                            {
-                                extend: 'excel',
-                                text: 'ส่งออก Excel',
-                                className: 'bg-green-200 hover:bg-green-300 text-green-800 font-semibold py-1 px-3 rounded shadow mr-2 mb-2'
-                            },
-                            {
-                                extend: 'pdf',
-                                text: 'ส่งออก PDF',
-                                className: 'bg-red-200 hover:bg-red-300 text-red-800 font-semibold py-1 px-3 rounded shadow mr-2 mb-2'
-                            },
-                            {
-                                extend: 'csv',
-                                text: 'ส่งออก CSV',
-                                className: 'bg-blue-200 hover:bg-blue-300 text-blue-800 font-semibold py-1 px-3 rounded shadow mr-2 mb-2'
-                            },
-                            {
-                                extend: 'print',
-                                text: 'พิมพ์',
-                                className: 'bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-semibold py-1 px-3 rounded shadow mr-2 mb-2'
-                            }
-                        ],
-                        drawCallback: function() {
-                            // เพิ่ม Tailwind ให้กับฟิลด์ค้นหา/แสดงแถว
-                            $('.dataTables_filter input').addClass('border border-blue-300 rounded px-2 py-1 ml-2');
-                            $('.dataTables_length select').addClass('border border-blue-300 rounded px-2 py-1 ml-2');
-                            $('.dt-buttons button').addClass('transition-all duration-150');
-                        }
-                    });
-                }
-            } else {
-                tableContainer.innerHTML = '<div class="text-red-400 text-center py-8">ไม่พบข้อมูล</div>';
-            }
-        })
-        .catch(() => {
-            tableContainer.innerHTML = '<div class="text-red-400 text-center py-8">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
-        });
-}
-
-// LEVEL TAB: รายงานตามชั้นเรียน
-const selectLevel2 = document.getElementById('select-level2');
-const levelTableContainer = document.getElementById('level-table-container');
-
-selectLevel2.addEventListener('change', function() {
-    const level = this.value;
-    if (level) {
-        fetchLevelData(level);
-    } else {
-        levelTableContainer.innerHTML = '<div class="text-gray-400 text-center py-8">กรุณาเลือกชั้น</div>';
-    }
-});
-
-function fetchLevelData(level) {
-    levelTableContainer.innerHTML = '<div class="text-green-400 text-center py-8 animate-pulse">กำลังโหลดข้อมูล...</div>';
-    fetch('api/fetch_level_report.php?level=' + encodeURIComponent(level))
-        .then(res => res.json())
-        .then(data => {
-            if (Array.isArray(data) && data.length > 0) {
-                let html = `
-                <div class="overflow-x-auto">
-                <table class="min-w-full bg-white rounded shadow text-sm" id="level-report-table">
-                    <thead>
-                        <tr class="bg-green-200 text-green-900">
-                            <th class="px-4 py-2 text-left">#</th>
-                            <th class="px-4 py-2 text-left">ห้อง</th>
-                            <th class="px-4 py-2 text-left">จำนวนนักเรียน</th>
-                            <th class="px-4 py-2 text-left">ชุมนุมที่สมัครมากที่สุด</th>
-                            <th class="px-4 py-2 text-left">จำนวนสมาชิก</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                `;
-                data.forEach((row, idx) => {
-                    html += `
-                        <tr class="hover:bg-green-50">
-                            <td class="px-4 py-2">${idx+1}</td>
-                            <td class="px-4 py-2">${row.room}</td>
-                            <td class="px-4 py-2">${row.student_count}</td>
-                            <td class="px-4 py-2">${row.top_club}</td>
-                            <td class="px-4 py-2">${row.top_club_count}</td>
-                        </tr>
-                    `;
-                });
-                html += `
-                    </tbody>
-                </table>
-                </div>
-                `;
-                levelTableContainer.innerHTML = html;
-                if (window.jQuery && window.jQuery.fn.dataTable) {
-                    $('#level-report-table').DataTable({
-                        "language": {
-                            "lengthMenu": "แสดง _MENU_ แถว",
-                            "zeroRecords": "ไม่พบข้อมูล",
-                            "info": "แสดง _START_ ถึง _END_ จากทั้งหมด _TOTAL_ แถว",
-                            "infoEmpty": "ไม่มีข้อมูล",
-                            "infoFiltered": "(กรองจาก _MAX_ แถว)",
-                            "search": "ค้นหา:",
-                            "paginate": {
-                                "first": "หน้าแรก",
-                                "last": "หน้าสุดท้าย",
-                                "next": "ถัดไป",
-                                "previous": "ก่อนหน้า"
-                            }
-                        },
-                        "order": [[0, "asc"]],
-                        "pageLength": 10,
-                        "lengthMenu": [5, 10, 25, 50, 100],
-                        "pagingType": "simple",
-                        "searching": true,
-                        "info": true,
-                        "autoWidth": false,
-                        "responsive": true,
-                        dom: '<"flex flex-wrap items-center justify-between mb-2"Bf>rt<"flex flex-wrap items-center justify-between mt-2"lip>',
-                        buttons: [
-                            {
-                                extend: 'copy',
-                                text: 'คัดลอก',
-                                className: 'bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-3 rounded shadow mr-2 mb-2'
-                            },
-                            {
-                                extend: 'excel',
-                                text: 'ส่งออก Excel',
-                                className: 'bg-green-200 hover:bg-green-300 text-green-800 font-semibold py-1 px-3 rounded shadow mr-2 mb-2'
-                            },
-                            {
-                                extend: 'pdf',
-                                text: 'ส่งออก PDF',
-                                className: 'bg-red-200 hover:bg-red-300 text-red-800 font-semibold py-1 px-3 rounded shadow mr-2 mb-2'
-                            },
-                            {
-                                extend: 'csv',
-                                text: 'ส่งออก CSV',
-                                className: 'bg-blue-200 hover:bg-blue-300 text-blue-800 font-semibold py-1 px-3 rounded shadow mr-2 mb-2'
-                            },
-                            {
-                                extend: 'print',
-                                text: 'พิมพ์',
-                                className: 'bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-semibold py-1 px-3 rounded shadow mr-2 mb-2'
-                            }
-                        ],
-                        drawCallback: function() {
-                            $('.dataTables_filter input').addClass('border border-green-300 rounded px-2 py-1 ml-2');
-                            $('.dataTables_length select').addClass('border border-green-300 rounded px-2 py-1 ml-2');
-                            $('.dt-buttons button').addClass('transition-all duration-150');
-                        }
-                    });
-                }
-            } else {
-                levelTableContainer.innerHTML = '<div class="text-red-400 text-center py-8">ไม่พบข้อมูล</div>';
-            }
-        })
-        .catch(() => {
-            levelTableContainer.innerHTML = '<div class="text-red-400 text-center py-8">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
-        });
-}
-</script>
+<!-- แยก script ของแต่ละแท็บ -->
+<script src="js/room_report.js"></script>
+<script src="js/level_report.js"></script>
+<script src="js/club_report.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css"/>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
@@ -430,5 +186,174 @@ function fetchLevelData(level) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script>
+// OVERVIEW TAB: ภาพรวมทั้งโรงเรียน
+const overviewTableContainer = document.getElementById('overview-table-container');
+const overviewTab = document.getElementById('overview-tab');
+
+function fetchOverviewData() {
+    overviewTableContainer.innerHTML = '<div class="text-yellow-400 text-center py-8 animate-pulse">กำลังโหลดข้อมูล...</div>';
+    fetch('api/fetch_club_report.php')
+        .then(res => res.json())
+        .then(data => {
+            if (Array.isArray(data) && data.length > 0) {
+                let sum = {
+                    "ม.1": 0, "ม.2": 0, "ม.3": 0, "ม.4": 0, "ม.5": 0, "ม.6": 0, total: 0
+                };
+                data.forEach(row => {
+                    if (row.grade_levels) {
+                        for (let k of ["ม.1", "ม.2", "ม.3", "ม.4", "ม.5", "ม.6"]) {
+                            if (row.grade_levels[k] !== undefined) sum[k] += row.grade_levels[k];
+                        }
+                    }
+                    sum.total += row.total_count;
+                });
+
+                fetch('api/fetch_student_count_by_level.php')
+                    .then(res2 => res2.json())
+                    .then(studentData => {
+                        // Chart.js card
+                        let chartId = "overview-bar-chart";
+                        let chartColors = [
+                            "#fbbf24", "#34d399", "#60a5fa", "#f472b6", "#a78bfa", "#f87171"
+                        ];
+                        let chartLabels = ["ม.1", "ม.2", "ม.3", "ม.4", "ม.5", "ม.6"];
+                        let chartData = chartLabels.map(k => sum[k]);
+                        let chartMax = Math.max(...Object.values(studentData), ...chartData) + 5;
+
+                        let html = `
+                        <div class="flex flex-wrap gap-4 justify-center mb-6">
+                            ${chartLabels.map((k, i) => `
+                                <div class="bg-white rounded-lg shadow-lg p-4 w-40 hover:scale-105 transition-transform duration-200 border-t-4" style="border-color: ${chartColors[i]}">
+                                    <div class="text-sm text-gray-500 mb-1 text-center">${k}</div>
+                                    <div class="text-3xl font-bold text-gray-800 text-center animate-pulse">${sum[k]}</div>
+                                    <div class="text-xs text-gray-400 text-center">สมัครแล้ว / ทั้งหมด</div>
+                                    <div class="flex justify-center items-end h-16 mt-2">
+                                        <div class="relative w-6 mx-1">
+                                            <div class="absolute bottom-0 left-0 w-6 rounded-t bg-yellow-400 transition-all duration-700"
+                                                style="height:${studentData[k] ? (sum[k]/studentData[k]*100) : 0}%; min-height:8px; max-height:100%;"></div>
+                                            <div class="absolute bottom-0 left-0 w-6 h-full border border-yellow-300 rounded-t"></div>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 text-center mt-1">${sum[k]} / ${studentData[k] ?? 0}</div>
+                                </div>
+                            `).join('')}
+                            <div class="bg-yellow-100 rounded-lg shadow-lg p-4 w-40 hover:scale-105 transition-transform duration-200 border-t-4 border-yellow-400">
+                                <div class="text-sm text-gray-700 mb-1 text-center font-bold">รวมทั้งสิ้น</div>
+                                <div class="text-3xl font-bold text-yellow-700 text-center animate-bounce">${sum.total}</div>
+                                <div class="text-xs text-gray-400 text-center">สมัครแล้ว / ทั้งหมด</div>
+                                <div class="flex justify-center items-end h-16 mt-2">
+                                    <div class="relative w-6 mx-1">
+                                        <div class="absolute bottom-0 left-0 w-6 rounded-t bg-yellow-400 transition-all duration-700"
+                                            style="height:${Object.values(studentData).reduce((a,b)=>a+b,0) ? (sum.total/Object.values(studentData).reduce((a,b)=>a+b,0)*100) : 0}%; min-height:8px; max-height:100%;"></div>
+                                        <div class="absolute bottom-0 left-0 w-6 h-full border border-yellow-300 rounded-t"></div>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-gray-700 text-center mt-1 font-bold">${sum.total} / ${Object.values(studentData).reduce((a,b)=>a+b,0)}</div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white rounded shadow text-sm" id="overview-report-table">
+                            <thead>
+                                <tr class="bg-yellow-200 text-yellow-900">
+                                    <th class="px-4 py-2 text-left">ระดับชั้น</th>
+                                    <th class="px-4 py-2 text-center">จำนวนที่สมัครแล้ว</th>
+                                    <th class="px-4 py-2 text-center">ยอดนักเรียนทั้งหมด</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        `;
+                        let total_students = 0;
+                        for (let k of chartLabels) {
+                            const reg = sum[k];
+                            const all = studentData[k] !== undefined ? studentData[k] : 0;
+                            total_students += all;
+                            html += `
+                                <tr class="hover:bg-yellow-50">
+                                    <td class="px-4 py-2">${k}</td>
+                                    <td class="px-4 py-2 text-center">${reg}</td>
+                                    <td class="px-4 py-2 text-center">${all}</td>
+                                </tr>
+                            `;
+                        }
+                        html += `
+                                <tr class="bg-yellow-100 font-bold">
+                                    <td class="px-4 py-2">รวมทั้งสิ้น</td>
+                                    <td class="px-4 py-2 text-center">${sum.total}</td>
+                                    <td class="px-4 py-2 text-center">${total_students}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                        <div class="flex justify-center mt-8">
+                            <canvas id="${chartId}" height="120"></canvas>
+                        </div>
+                        `;
+                        overviewTableContainer.innerHTML = html;
+
+                        // Chart.js bar chart
+                        if (window.Chart) {
+                            const ctx = document.getElementById(chartId).getContext('2d');
+                            new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: chartLabels,
+                                    datasets: [
+                                        {
+                                            label: 'สมัครแล้ว',
+                                            data: chartData,
+                                            backgroundColor: chartColors,
+                                            borderRadius: 8
+                                        },
+                                        {
+                                            label: 'นักเรียนทั้งหมด',
+                                            data: chartLabels.map(k => studentData[k] ?? 0),
+                                            backgroundColor: 'rgba(156,163,175,0.2)',
+                                            borderColor: 'rgba(156,163,175,0.5)',
+                                            borderWidth: 2,
+                                            borderRadius: 8
+                                        }
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    plugins: {
+                                        legend: { display: true },
+                                        tooltip: { enabled: true }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            max: chartMax
+                                        }
+                                    },
+                                    animation: {
+                                        duration: 1200,
+                                        easing: 'easeOutBounce'
+                                    }
+                                }
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        overviewTableContainer.innerHTML = '<div class="text-red-400 text-center py-8">เกิดข้อผิดพลาดในการโหลดข้อมูลนักเรียน</div>';
+                    });
+            } else {
+                overviewTableContainer.innerHTML = '<div class="text-red-400 text-center py-8">ไม่พบข้อมูล</div>';
+            }
+        })
+        .catch(() => {
+            overviewTableContainer.innerHTML = '<div class="text-red-400 text-center py-8">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+        });
+}
+
+if (overviewTab) {
+    overviewTab.addEventListener('click', function() {
+        fetchOverviewData();
+    });
+}
+</script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>

@@ -118,4 +118,9 @@ class Club
         }
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getPDO()
+    {
+        return $this->pdo;
+    }
 }
