@@ -141,7 +141,8 @@ switch ($action) {
             $result[] = [
                 'student_id' => $row['student_id'],
                 'name' => $stu ? $stu['Stu_pre'].$stu['Stu_name'].' '.$stu['Stu_sur'] : '',
-                'class_name' => $stu ? ('ม.'.$stu['Stu_major'].'/'.$stu['Stu_room'] ?? '') : ''
+                'class_name' => $stu ? ('ม.'.$stu['Stu_major'].'/'.$stu['Stu_room'] ?? '') : '',
+                'created_at' => $row['created_at'] // เพิ่ม created_at
             ];
         }
         echo json_encode(['success' => true, 'members' => $result, 'term' => $current_term, 'year' => $current_year]);

@@ -54,6 +54,7 @@ require_once('header.php');
                                         <th class="py-2 px-4 text-center border-b">รหัสนักเรียน</th>
                                         <th class="py-2 px-4 text-center border-b">ชื่อนักเรียน</th>
                                         <th class="py-2 px-4 text-center border-b">ชั้น</th>
+                                        <th class="py-2 px-4 text-center border-b">เวลาที่สมัคร</th>
                                         <th class="py-2 px-4 text-center border-b">จัดการ</th>
                                     </tr>
                                 </thead>
@@ -72,6 +73,7 @@ require_once('header.php');
 <?php require_once('script.php');?>
 <!-- SweetAlert2 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
 let clubInfoCache = {}; // เก็บข้อมูลชุมนุมที่เลือกไว้สำหรับพิมพ์
 
@@ -92,42 +94,64 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+    // DataTable instance
+    let membersTable = $('#members-table').DataTable({
+        "ordering": true,
+        "order": [[4, "asc"]], // คอลัมน์เวลาที่สมัคร (index 4) ASC
+        "language": {
+            "lengthMenu": "แสดง _MENU_ รายการ",
+            "zeroRecords": "ไม่พบข้อมูล",
+            "info": "แสดงหน้า _PAGE_ จาก _PAGES_",
+            "infoEmpty": "ไม่มีข้อมูล",
+            "infoFiltered": "(กรองจาก _MAX_ รายการทั้งหมด)",
+            "search": "ค้นหา:",
+            "paginate": {
+                "first": "แรก",
+                "last": "สุดท้าย",
+                "next": "ถัดไป",
+                "previous": "ก่อนหน้า"
+            }
+        },
+        "destroy": true // ให้สามารถรีอินิท DataTable ได้
+    });
+
     // เมื่อเลือกชุมนุม ให้โหลดรายชื่อนักเรียน
     document.getElementById('club_id').addEventListener('change', function() {
         const clubId = this.value;
-        const tbody = document.getElementById('members-table-body');
-        tbody.innerHTML = '';
+        // ล้างข้อมูล DataTable เดิม
+        membersTable.clear().draw();
         if (!clubId) return;
         // ดึง term/year ปัจจุบันจาก ClubController (ใช้ promise chain)
         fetch('../controllers/ClubController.php?action=list_by_advisor')
             .then(res => res.json())
             .then(data => {
-                // สมมติว่ามี term/year ใน response
                 const term = data.term;
                 const year = data.year;
-                // ส่ง term/year ไปกับ request members
                 return fetch('../controllers/ClubController.php?action=members&club_id=' + encodeURIComponent(clubId) + '&term=' + encodeURIComponent(term) + '&year=' + encodeURIComponent(year));
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success && Array.isArray(data.members)) {
+                    // sort by created_at ASC
+                    data.members.sort((a, b) => {
+                        if (!a.created_at) return -1;
+                        if (!b.created_at) return 1;
+                        return a.created_at.localeCompare(b.created_at);
+                    });
                     data.members.forEach((stu, idx) => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td class="py-2 px-4 text-center border-b">${idx + 1}</td>
-                            <td class="py-2 px-4 text-center border-b">${stu.student_id}</td>
-                            <td class="py-2 px-4 border-b">${stu.name}</td>
-                            <td class="py-2 px-4 text-center border-b">${stu.class_name || ''}</td>
-                            <td class="py-2 px-4 text-center border-b">
-                                <button class="btn btn-danger btn-sm delete-member" data-student-id="${stu.student_id}" data-club-id="${clubId}">ลบ</button>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
+                        membersTable.row.add([
+                            idx + 1,
+                            stu.student_id,
+                            stu.name,
+                            stu.class_name || '',
+                            stu.created_at ? stu.created_at : '-',
+                            `<button class="btn btn-danger btn-sm delete-member" data-student-id="${stu.student_id}" data-club-id="${clubId}">ลบ</button>`
+                        ]).draw(false);
                     });
                 } else {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td colspan="5" class="text-center py-2">ไม่พบข้อมูล</td>`;
-                    tbody.appendChild(tr);
+                    membersTable.row.add([
+                        '', '', 'ไม่พบข้อมูล', '', '', ''
+                    ]).draw(false);
                 }
             });
     });
@@ -177,8 +201,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    
-
     // พิมพ์รายชื่อ
     document.getElementById('print-btn').addEventListener('click', function() {
         const clubId = document.getElementById('club_id').value;
@@ -193,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody.querySelectorAll('tr').forEach(tr => {
             let cells = Array.from(tr.children);
             // ข้ามแถว "ไม่พบข้อมูล"
-            if (cells.length < 5) return;
+            if (cells.length < 6) return;
             rows.push([
                 cells[0].textContent,
                 cells[1].textContent,
