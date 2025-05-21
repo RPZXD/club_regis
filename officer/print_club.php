@@ -147,6 +147,7 @@ $page_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : 
                         <th class="border px-3 py-2 text-center font-semibold">เลขประจำตัว</th>
                         <th class="border px-3 py-2 text-center font-semibold">ชื่อ-สกุล</th>
                         <th class="border px-3 py-2 text-center font-semibold">ชั้น</th>
+                        <th class="border px-3 py-2 text-center font-semibold">เลขที่</th>
                         <th class="border px-3 py-2 text-center font-semibold">หมายเหตุ</th>
                     </tr>
                 </thead>
@@ -157,6 +158,7 @@ $page_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : 
                         <td class="border px-3 py-1 text-center font-mono"><?= htmlspecialchars($stu['student_id']) ?></td>
                         <td class="border px-3 py-1"><?= htmlspecialchars($stu['name']) ?></td>
                         <td class="border px-3 py-1 text-center"><?= htmlspecialchars($stu['class_name']) ?></td>
+                        <td class="border px-3 py-1 text-center"><?= htmlspecialchars($stu['Stu_no']) ?></td>
                         <td class="border px-3 py-1 text-center"></td>
                     </tr>
                     <?php endforeach; ?>
