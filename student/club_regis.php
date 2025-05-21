@@ -12,6 +12,21 @@ $stu_grade = 'ม.' . $stu_major; // เพิ่มบรรทัดนี้
 $config = json_decode(file_get_contents('../config.json'), true);
 $global = $config['global'];
 
+// โหลด setting เวลาเปิด-ปิดรับสมัคร (รองรับแยกตามระดับชั้น)
+// กำหนด timezone เป็นประเทศไทย
+date_default_timezone_set('Asia/Bangkok');
+$regisSetting = json_decode(file_get_contents('../regis_setting.json'), true);
+$stuGradeKey = $stu_grade; // เช่น "ม.1"
+if (isset($regisSetting[$stuGradeKey])) {
+    $regisStart = isset($regisSetting[$stuGradeKey]['regis_start']) ? strtotime($regisSetting[$stuGradeKey]['regis_start']) : null;
+    $regisEnd = isset($regisSetting[$stuGradeKey]['regis_end']) ? strtotime($regisSetting[$stuGradeKey]['regis_end']) : null;
+} else {
+    $regisStart = null;
+    $regisEnd = null;
+}
+$now = time();
+$regisOpen = ($regisStart && $regisEnd && $now >= $regisStart && $now <= $regisEnd);
+
 // ดึงข้อมูลชุมนุมจากฐานข้อมูล
 require_once('../classes/DatabaseClub.php');
 require_once('../models/Club.php');
@@ -47,6 +62,7 @@ foreach ($allClubs as $club) {
     }
 }
 
+
 require_once('header.php');
 ?>
 <body class="hold-transition sidebar-mini layout-fixed light-mode">
@@ -61,6 +77,18 @@ require_once('header.php');
         </div>
         <section class="content">
             <div class="container-fluid">
+                <?php if (!$regisOpen): ?>
+                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded shadow">
+                        <p>
+                            <b>ระบบสมัครชุมนุมยังไม่เปิด หรือปิดรับสมัครแล้วสำหรับระดับชั้น <?= htmlspecialchars($stu_grade) ?></b><br>
+                            <?php if ($regisStart && $regisEnd): ?>
+                                เปิดรับสมัคร: <b><?= date('d/m/Y H:i', $regisStart) ?></b> ถึง <b><?= date('d/m/Y H:i', $regisEnd) ?></b>
+                            <?php else: ?>
+                                <span>ยังไม่ได้ตั้งค่าเวลาเปิด-ปิดรับสมัครสำหรับระดับชั้นนี้</span>
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
                 <div class="bg-white rounded-lg shadow-lg p-8 max-w-8xl mx-auto mt-8 border border-blue-200">
                     <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-blue-700">
                         <span>🎉</span> เลือกชุมนุมที่เปิดรับสมัครสำหรับระดับชั้น 
@@ -107,7 +135,7 @@ require_once('header.php');
                                     <td class="py-2 px-4 border-b text-center">
                                         <button class="apply-btn bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white px-4 py-2 rounded-full shadow font-bold flex items-center gap-1 transition disabled:opacity-50"
                                             data-id="<?php echo $club['club_id']; ?>"
-                                            <?= $percent >= 100 ? 'disabled' : '' ?>>
+                                            <?= $percent >= 100 || !$regisOpen ? 'disabled' : '' ?>>
                                             <span>📝</span> สมัคร
                                         </button>
                                     </td>
