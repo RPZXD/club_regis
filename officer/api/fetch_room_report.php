@@ -49,38 +49,35 @@ while ($row = $clubStmt->fetch(PDO::FETCH_ASSOC)) {
     $clubMembers[$row['student_id']] = $row['club_id'];
 }
 
-// ดึงชื่อชุมนุมทั้งหมด
-$clubs = [];
-$clubNameStmt = $pdoClub->query("SELECT club_id, club_name FROM clubs WHERE term = '$current_term' AND year = '$current_year'");
+// ดึง club_id => [club_name, advisor_teacher] ทั้งหมดในครั้งเดียว
+$clubsInfo = [];
+$clubNameStmt = $pdoClub->query("SELECT club_id, club_name, advisor_teacher FROM clubs WHERE term = '$current_term' AND year = '$current_year'");
 while ($row = $clubNameStmt->fetch(PDO::FETCH_ASSOC)) {
-    $clubs[$row['club_id']] = $row['club_name'];
+    $clubsInfo[$row['club_id']] = [
+        'club_name' => $row['club_name'],
+        'advisor_teacher' => $row['advisor_teacher']
+    ];
 }
 
-// clubs table structure:
-// club_id, club_name, description, advisor_teacher, grade_levels, max_members, term, year, created_at, updated_at
+// เตรียม cache สำหรับ advisor_teacher => Teach_name
+$advisorNameCache = [];
 
-// club_members table structure:
-// id, student_id, club_id, term, year, created_at, updated_at
-
-// เตรียมข้อมูลสำหรับตาราง
 $result = [];
 foreach ($students as $stu) {
     $student_id = $stu['Stu_id'];
     $club_id = $clubMembers[$student_id] ?? '';
-    $club_name = $club_id && isset($clubs[$club_id]) ? $clubs[$club_id] : '-';
+    $club_name = ($club_id && isset($clubsInfo[$club_id])) ? $clubsInfo[$club_id]['club_name'] : '-';
     $fullname = $stu['Stu_pre'] . $stu['Stu_name'] . ' ' . $stu['Stu_sur'];
     // ดึงชื่อครูที่ปรึกษาชุมนุม (advisor_teacher)
     $advisor = '-';
-    if ($club_id && isset($clubs[$club_id])) {
-        // ดึง advisor_teacher จาก clubs
-        $clubInfoStmt = $pdoClub->prepare("SELECT advisor_teacher FROM clubs WHERE club_id = :club_id AND term = :term AND year = :year LIMIT 1");
-        $clubInfoStmt->execute(['club_id' => $club_id, 'term' => $current_term, 'year' => $current_year]);
-        $clubInfo = $clubInfoStmt->fetch(PDO::FETCH_ASSOC);
-        if ($clubInfo && !empty($clubInfo['advisor_teacher'])) {
-            // ดึงชื่อจริงของครูที่ปรึกษา
-            $dbUsers = new \App\DatabaseUsers();
-            $teacher = $dbUsers->getTeacherByUsername($clubInfo['advisor_teacher']);
-            $advisor = $teacher ? ($teacher['Teach_name'] ?? $clubInfo['advisor_teacher']) : $clubInfo['advisor_teacher'];
+    if ($club_id && isset($clubsInfo[$club_id])) {
+        $advisor_teacher = $clubsInfo[$club_id]['advisor_teacher'];
+        if ($advisor_teacher) {
+            if (!isset($advisorNameCache[$advisor_teacher])) {
+                $teacher = $dbUsers->getTeacherByUsername($advisor_teacher);
+                $advisorNameCache[$advisor_teacher] = $teacher ? ($teacher['Teach_name'] ?? $advisor_teacher) : $advisor_teacher;
+            }
+            $advisor = $advisorNameCache[$advisor_teacher];
         }
     }
     $result[] = [

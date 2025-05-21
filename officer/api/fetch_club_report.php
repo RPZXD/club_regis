@@ -23,36 +23,32 @@ $current_year = $termPee->pee;
 // ดึงข้อมูลชุมนุมทั้งหมด เฉพาะ term/year ปัจจุบัน
 $clubs = $controller->getAll($current_term, $current_year);
 
+// เตรียม array สำหรับนับตาม grade_levels (ม.1-ม.6)
+$grade_level_keys = ["ม.1", "ม.2", "ม.3", "ม.4", "ม.5", "ม.6"];
 $result = [];
+
+// ดึง student ข้อมูลเดียวจบ (batch) สำหรับ lookup
+$student_stmt = $dbUsers->query("SELECT Stu_id, Stu_major FROM student WHERE Stu_status = '1'");
+$student_major_map = [];
+while ($stu = $student_stmt->fetch()) {
+    // Stu_major อาจเป็น 1-6 หรือ "ม.1"-"ม.6"
+    $major = $stu['Stu_major'];
+    if (in_array($major, ['1','2','3','4','5','6'])) {
+        $major = "ม." . $major;
+    }
+    $student_major_map[$stu['Stu_id']] = $major;
+}
+
 foreach ($clubs as $club) {
     // หาครูที่ปรึกษา (ชื่อจริง)
     $advisor = $dbUsers->getTeacherByUsername($club['advisor_teacher']);
     $advisor_name = $advisor ? $advisor['Teach_name'] : $club['advisor_teacher'];
 
-    // เตรียม array สำหรับนับตาม grade_levels (ใช้เฉพาะ "ม.4", "ม.5", "ม.6" เท่านั้น)
-    $grade_levels = [
-        "ม.4" => 0,
-        "ม.5" => 0,
-        "ม.6" => 0
-    ];
-    if (!empty($club['grade_levels'])) {
-        $grades = array_map('trim', explode(',', $club['grade_levels']));
-        foreach ($grades as $g) {
-            // แปลงเลข 4/5/6 เป็น "ม.4"/"ม.5"/"ม.6"
-            if (in_array($g, ['4', '5', '6'])) {
-                $key = "ม." . $g;
-            } else {
-                $key = $g;
-            }
-            if (!isset($grade_levels[$key])) {
-                $grade_levels[$key] = 0;
-            }
-        }
-    }
+    // เตรียม array สำหรับนับตาม grade_levels (ม.1-ม.6)
+    $grade_levels = array_fill_keys($grade_level_keys, 0);
 
-    // นับสมาชิกแต่ละระดับชั้น (Stu_major จาก student ที่อยู่อีกฐาน)
+    // ดึง student_id ทั้งหมดใน club_members ของชุมนุมนี้ (term/year ปัจจุบัน)
     $club_id = $club['club_id'];
-    // แก้ไขการเข้าถึง pdo: เพิ่ม public getter ใน Club model แล้วใช้แทน
     $pdo = $controller->getPDO();
     $stmt = $pdo->prepare("
         SELECT m.student_id
@@ -62,13 +58,10 @@ foreach ($clubs as $club) {
     $stmt->execute(['club_id' => $club_id, 'term' => $current_term, 'year' => $current_year]);
     $total = 0;
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $stu = $dbUsers->getStudentByUsername($row['student_id']);
-        if (!$stu) continue;
-        $major = $stu['Stu_major'];
-        // แปลงเลข 4/5/6 เป็น "ม.4"/"ม.5"/"ม.6"
-        $level_key = (in_array($major, ['4', '5', '6'])) ? "ม." . $major : $major;
-        if (isset($grade_levels[$level_key])) {
-            $grade_levels[$level_key]++;
+        $stu_id = $row['student_id'];
+        $major = $student_major_map[$stu_id] ?? null;
+        if ($major && isset($grade_levels[$major])) {
+            $grade_levels[$major]++;
         }
         $total++;
     }
