@@ -137,7 +137,6 @@ $page_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : 
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4V6a4 4 0 00-8 0v4m12 0a4 4 0 01-8 0m8 0V6a4 4 0 00-8 0v4"/></svg>
                 รายชื่อสมาชิก (<?= count($students) ?> คน)
             </div>
-            <div class="text-gray-500 text-xs italic">* เรียงตามเวลาสมัคร</div>
         </div>
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full border border-blue-300 rounded-lg overflow-hidden">
