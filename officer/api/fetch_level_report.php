@@ -10,7 +10,6 @@ use App\DatabaseClub;
 use App\DatabaseUsers;
 use App\Models\Club;
 
-// รับค่าระดับชั้น (level) เช่น "ม.4"
 $level = $_GET['level'] ?? '';
 if (!$level) {
     echo json_encode([]);
@@ -26,64 +25,49 @@ $dbUsers = new DatabaseUsers();
 $pdo = $dbClub->getPDO();
 $clubModel = new Club($pdo);
 
-// ดึง student_id ทั้งหมดใน club_members ที่ตรง term/year แล้วไปดึงข้อมูล student จากฐาน users
-$stmt = $pdo->prepare("
-    SELECT DISTINCT m.student_id
-    FROM club_members m
-    WHERE m.term = :term AND m.year = :year
-");
-$stmt->execute(['term' => $current_term, 'year' => $current_year]);
-$students = [];
+// ดึง student_id, Stu_room, Stu_major ล่วงหน้าทั้งหมดในระดับชั้นนี้ (batch)
+$stmt = $dbUsers->query(
+    "SELECT Stu_id, Stu_room, Stu_major FROM student WHERE Stu_status = '1' AND Stu_major = ?",
+    [str_replace('ม.', '', $level)]
+);
+$studentMap = [];
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $stu = $dbUsers->getStudentByUsername($row['student_id']);
-    if ($stu && isset($stu['Stu_major']) && isset($stu['Stu_room'])) {
-        if ('ม.' . $stu['Stu_major'] === $level) {
-            $students[] = [
-                'student_id' => $row['student_id'],
-                'room' => $stu['Stu_room']
-            ];
-        }
-    }
+    $studentMap[$row['Stu_id']] = $row['Stu_room'];
 }
 
-// หา room ทั้งหมดในระดับชั้นนี้
-$rooms = [];
-foreach ($students as $stu) {
-    if (!in_array($stu['room'], $rooms)) {
-        $rooms[] = $stu['room'];
-    }
+// ดึง club_members เฉพาะ student_id ที่อยู่ในระดับชั้นนี้และ term/year นี้
+if (empty($studentMap)) {
+    echo json_encode([]);
+    exit;
 }
-sort($rooms);
+$studentIds = array_keys($studentMap);
+$inQuery = implode(',', array_fill(0, count($studentIds), '?'));
+$params = array_merge($studentIds, [$current_term, $current_year]);
+$sql = "SELECT student_id, club_id FROM club_members WHERE student_id IN ($inQuery) AND term = ? AND year = ?";
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 
+$roomClubCount = []; // [room][club_id] => count
+$roomStudentCount = []; // [room] => count
+foreach ($stmt as $row) {
+    $stu_id = $row['student_id'];
+    $club_id = $row['club_id'];
+    $room = $studentMap[$stu_id];
+    if (!$room) continue;
+    if (!isset($roomClubCount[$room])) $roomClubCount[$room] = [];
+    if (!isset($roomClubCount[$room][$club_id])) $roomClubCount[$room][$club_id] = 0;
+    $roomClubCount[$room][$club_id]++;
+    if (!isset($roomStudentCount[$room])) $roomStudentCount[$room] = [];
+    $roomStudentCount[$room][$stu_id] = true;
+}
+
+// สร้างผลลัพธ์
 $result = [];
-foreach ($rooms as $room) {
-    // หา student_id ทั้งหมดในห้องนี้
-    $student_ids = [];
-    foreach ($students as $stu) {
-        if ($stu['room'] == $room) {
-            $student_ids[] = $stu['student_id'];
-        }
-    }
-
-    // นับจำนวนนักเรียนในห้องนี้
-    $total_students = count($student_ids);
-
-    // หาชุมนุมที่มีสมาชิกมากที่สุดในห้องนี้
-    $club_counts = [];
-    if ($total_students > 0) {
-        $inQuery = implode(',', array_fill(0, count($student_ids), '?'));
-        $sql = "SELECT club_id, COUNT(*) as cnt FROM club_members WHERE student_id IN ($inQuery) AND term = ? AND year = ? GROUP BY club_id";
-        $stmt2 = $pdo->prepare($sql);
-        $params = array_merge($student_ids, [$current_term, $current_year]);
-        $stmt2->execute($params);
-        while ($row2 = $stmt2->fetch(PDO::FETCH_ASSOC)) {
-            $club_counts[$row2['club_id']] = intval($row2['cnt']);
-        }
-    }
-
+foreach ($roomClubCount as $room => $clubCounts) {
+    $total_students = isset($roomStudentCount[$room]) ? count($roomStudentCount[$room]) : 0;
     $top_club_id = null;
     $top_club_count = 0;
-    foreach ($club_counts as $cid => $cnt) {
+    foreach ($clubCounts as $cid => $cnt) {
         if ($cnt > $top_club_count) {
             $top_club_id = $cid;
             $top_club_count = $cnt;
@@ -94,7 +78,6 @@ foreach ($rooms as $room) {
         $club = $clubModel->getById($top_club_id, $current_term, $current_year);
         $top_club_name = $club ? $club['club_name'] : '';
     }
-
     $result[] = [
         'room' => $room,
         'student_count' => $total_students,
@@ -102,5 +85,10 @@ foreach ($rooms as $room) {
         'top_club_count' => $top_club_count
     ];
 }
+
+// sort room
+usort($result, function($a, $b) {
+    return $a['room'] <=> $b['room'];
+});
 
 echo json_encode($result);
