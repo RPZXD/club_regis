@@ -27,8 +27,8 @@ class User
                 }
                 // เปรียบเทียบรหัสผ่าน (plain text)
                 if ($password === $student['Stu_password']) {
-                    // เพิ่ม role_edoc = 'STU' เพื่อความสอดคล้อง
-                    $student['role_edoc'] = 'STU';
+                    // เพิ่ม role_club = 'STU' เพื่อความสอดคล้อง
+                    $student['role_club'] = 'STU';
                     return $student;
                 }
             }
@@ -44,7 +44,7 @@ class User
             }
             if (
                 password_verify($password, $user['password']) &&
-                self::roleMatch($user['role_edoc'], $role)
+                self::roleMatch($user['role_club'], $role)
             ) {
                 return $user;
             }
@@ -52,12 +52,12 @@ class User
         return false;
     }
 
-    // ตรวจสอบว่า role_edoc ของ user อยู่ในกลุ่ม role ที่เลือก
-    private static function roleMatch($role_edoc, $role)
+    // ตรวจสอบว่า role_club ของ user อยู่ในกลุ่ม role ที่เลือก
+    private static function roleMatch($role_club, $role)
     {
         if (!isset(self::$allowedUserRoles[$role])) {
             return false;
         }
-        return in_array($role_edoc, self::$allowedUserRoles[$role]);
+        return in_array($role_club, self::$allowedUserRoles[$role]);
     }
 }
