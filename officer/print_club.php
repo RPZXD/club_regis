@@ -55,8 +55,20 @@ foreach ($members as $row) {
         'student_id' => $row['student_id'],
         'name' => $stu ? $stu['Stu_pre'].$stu['Stu_name'].' '.$stu['Stu_sur'] : '',
         'class_name' => $stu ? ('ม.'.$stu['Stu_major'].'/'.$stu['Stu_room'] ?? '') : '',
+        'Stu_major' => $stu['Stu_major'] ?? null,
+        'Stu_room' => $stu['Stu_room'] ?? null,
+        'Stu_no' => $stu['Stu_no'] ?? null,
     ];
 }
+// จัดเรียงตาม Stu_major, Stu_room, Stu_no
+usort($students, function($a, $b) {
+    $cmp = intval($a['Stu_major']) <=> intval($b['Stu_major']);
+    if ($cmp !== 0) return $cmp;
+    $cmp = intval($a['Stu_room']) <=> intval($b['Stu_room']);
+    if ($cmp !== 0) return $cmp;
+    return intval($a['Stu_no']) <=> intval($b['Stu_no']);
+});
+
 $page_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http")
     . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 ?>
