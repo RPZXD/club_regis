@@ -11,9 +11,10 @@ function createNavItem($href, $iconClass, $text) {
 
 
     echo createNavItem('index.php', 'bi-house', 'หน้าหลัก');
-    echo createNavItem('club_list.php', 'bi-list-check', 'รายชื่อชุมนุม');
+    echo createNavItem('club_list.php', 'bi-list-ul', 'รายการชุมนุม');
+    echo createNavItem('club_report.php', 'bi-file-earmark-text', 'รายงานการสมัครชุมนุม');
+    echo createNavItem('club_statistic.php', 'bi-bar-chart', 'สถิติการสมัครชุมนุม');
     // เพิ่มเมนูเฉพาะครู
-    echo createNavItem('club_members.php', 'bi-person-badge', 'จัดการนักเรียน');
     echo createNavItem('../logout.php', 'bi-box-arrow-right', 'ออกจากระบบ');
 
 ?>

@@ -11,10 +11,10 @@ class DatabaseClub
     public function __construct(
         $host = 'localhost',
         $dbname = 'phichaia_club',
-        // $username = 'root',
-        // $password = ''
-        $username = 'phichaia_stdcare',
-        $password = '4w87!9lZp'
+        $username = 'root',
+        $password = ''
+        // $username = 'phichaia_stdcare',
+        // $password = '48dv_m64N'
     ) {
         $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
         try {

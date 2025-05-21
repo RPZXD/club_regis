@@ -140,6 +140,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $redirect = 'teacher/index.php';
             } else if (isset($_POST['role']) && $_POST['role'] === 'นักเรียน') {
                 $redirect = 'student/index.php';
+            } else if (isset($_POST['role']) && $_POST['role'] === 'เจ้าหน้าที่') {
+                $redirect = 'officer/index.php';
             }
             ?>
             window.location.href = <?= json_encode($redirect) ?>;
