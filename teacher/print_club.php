@@ -186,8 +186,8 @@ $page_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : 
                 </div>
                 <div class="text-sm">
                     <div class="font-semibold">ลงชื่อ .................................................. ครูที่ปรึกษาชุมนุม</div>
-                    <div class="mt-2">( <?= htmlspecialchars($advisor_name) ?> )</div>
-                    <div class="mt-4">วันที่ <?= date('d/m/Y') ?></div>
+                    <div class="mt-2">( <?= htmlspecialchars($advisor_name) ?> )&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                    <div class="mt-4">วันที่ <?= date('d/m/Y') ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
                 </div>
             </div>
         </div>
