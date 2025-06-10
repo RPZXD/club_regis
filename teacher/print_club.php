@@ -180,8 +180,8 @@ $page_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : 
         
         <!-- เพิ่มส่วนลงนาม -->
         <div class="mt-12 flex justify-end">
-            <div class="text-center w-80">
-                <div class="border-b border-gray-400 pb-20 mb-2">
+            <div class="text-center w-120">
+                <div class="pb-20 mb-2">
                     <!-- ช่องว่างสำหรับลงนาม -->
                 </div>
                 <div class="text-sm">
