@@ -27,16 +27,16 @@ require_once('header.php');
 
     <section class="content">
       <div class="flex flex-col items-center justify-center min-h-[60vh] bg-white rounded-lg shadow-lg p-8 mx-auto max-w-2xl">
+        <div class="mb-6">
+          <img src="<?php echo 'dist/img/'.$global['logoLink']; ?>" alt="<?php echo $global['nameschool']; ?> Logo" class="max-h-40">
+        </div>
         <div class="text-6xl mb-4">🎓✨</div>
-        <h2 class="text-3xl font-bold text-gray-800 mb-2 text-center">ระบบรับสมัครชุมนุม</h2>
+        <h2 class="text-3xl font-bold text-gray-800 mb-2 text-center"><?php echo $global['pageTitle']; ?></h2>
         <p class="text-lg text-gray-600 mb-6 text-center">
-          ยินดีต้อนรับสู่ระบบรับสมัครชุมนุม<?php echo $global['nameschool']; ?>!<br>
+          ยินดีต้อนรับสู่ระบบ<?php echo $global['pageTitle'] . ' | ' . $global['nameschool']; ?>!<br>
           สมัครเข้าร่วมกิจกรรมที่คุณสนใจได้ง่ายๆ เพียงไม่กี่ขั้นตอน<br>
           <span class="text-2xl">🤝🏫🎉</span>
         </p>
-        <div class="mb-6">
-          <img src="<?php echo $global['logoLink']; ?>" alt="<?php echo $global['nameschool']; ?> Logo" class="max-h-40">
-        </div>
         <a href="login.php" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition">
           สมัครชุมนุมเลย!
         </a>

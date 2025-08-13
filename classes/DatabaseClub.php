@@ -11,10 +11,10 @@ class DatabaseClub
     public function __construct(
         $host = 'localhost',
         $dbname = 'phichaia_club',
-        // $username = 'root',
-        // $password = ''
-        $username = 'phichaia_stdcare',
-        $password = '48dv_m64N'
+        $username = 'root',
+        $password = ''
+        // $username = 'phichaia_stdcare',
+        // $password = '48dv_m64N'
     ) {
         $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
         try {
@@ -23,6 +23,18 @@ class DatabaseClub
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);
         } catch (PDOException $e) {
+            // Fallback for local XAMPP (root with no password)
+            if (!($username === 'root' && $password === '')) {
+                try {
+                    $this->pdo = new PDO($dsn, 'root', '', [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    ]);
+                    return; // success on fallback
+                } catch (PDOException $e2) {
+                    // ignore and rethrow original
+                }
+            }
             throw new \Exception('Database connection failed: ' . $e->getMessage());
         }
     }

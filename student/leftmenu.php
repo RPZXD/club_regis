@@ -12,6 +12,7 @@ function createNavItem($href, $iconClass, $text) {
 
 echo createNavItem('index.php', 'bi-house', 'หน้าหลัก');
 echo createNavItem('club_regis.php', 'bi-people-fill', 'สมัครชุมนุม');
+echo createNavItem('best_regis.php', 'bi-people-fill', 'สมัคร Best for teen');
 echo createNavItem('my_club.php', 'bi-star', 'ชุมนุมของฉัน');
 echo createNavItem('../logout.php', 'bi-box-arrow-right', 'ออกจากระบบ');
 
