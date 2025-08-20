@@ -14,7 +14,6 @@ use App\DatabaseClub;
 use App\DatabaseUsers;
 
 try {
-
     $club = new DatabaseClub();
     $pdo = $club->getPDO();
     $users = new DatabaseUsers();
@@ -24,41 +23,54 @@ try {
     $level = isset($_GET['level']) ? (int)$_GET['level'] : 1;
     $room = isset($_GET['room']) ? trim($_GET['room']) : '';
 
-    // Build student query conditions
-    $conditions = ["Stu_status = '1'", "Stu_major = :level"];
-    $params = ['level' => $level];
+    // Build conditions for student query
+    $conditions = ["s.Stu_status = '1'", "s.Stu_major = ?"];
+    $studentParams = [$level];
     
     if ($room !== '') {
-        $conditions[] = "Stu_room = :room";
-        $params['room'] = $room;
+        $conditions[] = "s.Stu_room = ?";
+        $studentParams[] = $room;
     }
 
-    // Get all students in the specified level/room
-    $studentQuery = "SELECT Stu_id, Stu_pre, Stu_name, Stu_sur, Stu_major, Stu_room 
-                     FROM student 
+    // Optimized single query with JOIN to get all data at once
+    // Use the users connection for student data and club connection for best activities
+    $studentQuery = "SELECT s.Stu_id, s.Stu_pre, s.Stu_name, s.Stu_sur, s.Stu_major, s.Stu_room 
+                     FROM student s
                      WHERE " . implode(' AND ', $conditions) . "
-                     ORDER BY Stu_room, Stu_id";
+                     ORDER BY s.Stu_room, s.Stu_id";
     
-    $studentStmt = $users->query($studentQuery, $params);
-    $students = $studentStmt->fetchAll();
+    $studentStmt = $users->query($studentQuery, $studentParams);
+    $students = $studentStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get activity memberships for this year
-    $memberQuery = "SELECT bm.student_id, bm.activity_id, ba.name as activity_name, bm.created_at
+    if (empty($students)) {
+        echo json_encode(['ok' => true, 'data' => []]);
+        exit;
+    }
+
+    // Get student IDs for batch lookup
+    $studentIds = array_column($students, 'Stu_id');
+    $placeholders = str_repeat('?,', count($studentIds) - 1) . '?';
+    
+    // Single optimized query for best activities
+    $memberQuery = "SELECT bm.student_id, ba.name as activity_name, bm.created_at
                     FROM best_members bm 
                     LEFT JOIN best_activities ba ON ba.id = bm.activity_id 
-                    WHERE bm.year = :year";
-    $memberStmt = $pdo->prepare($memberQuery);
-    $memberStmt->execute(['year' => $year]);
-    $memberMap = [];
+                    WHERE bm.year = ? AND bm.student_id IN ($placeholders)";
     
-    while ($member = $memberStmt->fetch()) {
+    $memberParams = array_merge([$year], $studentIds);
+    $memberStmt = $pdo->prepare($memberQuery);
+    $memberStmt->execute($memberParams);
+    
+    // Create activity map
+    $memberMap = [];
+    while ($member = $memberStmt->fetch(PDO::FETCH_ASSOC)) {
         $memberMap[$member['student_id']] = [
             'activity' => $member['activity_name'] ?? 'ไม่ระบุ',
             'created_at' => $member['created_at']
         ];
     }
 
-    // Combine student data with activity data
+    // Build result efficiently
     $result = [];
     foreach ($students as $student) {
         $memberInfo = $memberMap[$student['Stu_id']] ?? null;
@@ -73,7 +85,7 @@ try {
         ];
     }
 
-    echo json_encode(['ok' => true, 'data' => $result]);
+    echo json_encode(['ok' => true, 'data' => $result], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     echo json_encode(['ok' => false, 'message' => 'Database error: ' . $e->getMessage(), 'data' => []]);
 }
