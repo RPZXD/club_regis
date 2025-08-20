@@ -1,5 +1,9 @@
 (function(){
   let dtSummary; let dtStudents;
+  // Global variables for room data
+  let allLevels = [];
+  let allRoomsByLevel = {};
+  
   async function loadSummary(){
     try {
       const res = await fetch('api/best_fetch_room_report.php');
@@ -20,20 +24,12 @@
         return;
       }
       
-      const levels = new Set();
-      const roomsByLevel = {};
       data.forEach(r=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${r.room}</td><td class="text-right"><span class="badge badge-info">${r.cnt}</span></td>`;
         tbody.appendChild(tr);
-        // build selectors data
-        const m = String(r.room).match(/^ม\.(\d+)\/(\d+)/);
-        if (m) {
-          levels.add(m[1]);
-          roomsByLevel[m[1]] = roomsByLevel[m[1]] || new Set();
-          roomsByLevel[m[1]].add(m[2]);
-        }
       });
+      
       if (dtSummary) dtSummary.destroy();
       dtSummary = $('#best-room-table').DataTable({ 
         paging:true, 
@@ -54,30 +50,66 @@
         }
       });
 
-      // populate selectors if empty
-      const lvlSel = document.getElementById('room-level-select');
-      const roomSel = document.getElementById('room-room-select');
-      if (lvlSel && lvlSel.options.length === 0) {
-        lvlSel.innerHTML = '<option value="">-- เลือกชั้น --</option>';
-        Array.from(levels).sort((a,b)=>a-b).forEach(l=>{
-          const opt = document.createElement('option'); opt.value = l; opt.textContent = 'ม.'+l; lvlSel.appendChild(opt);
-        });
-        lvlSel.addEventListener('change', ()=> fillRooms(lvlSel.value));
-        if (lvlSel.value) fillRooms(lvlSel.value);
-      }
-      function fillRooms(level){
-        if (!roomSel) return;
-        roomSel.innerHTML = '<option value="">-- เลือกห้อง --</option>';
-        const set = roomsByLevel[level] || new Set();
-        Array.from(set).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(rm=>{
-          const opt = document.createElement('option'); opt.value = rm; opt.textContent = rm; roomSel.appendChild(opt);
-        });
-      }
+      // Now load all available rooms for dropdowns
+      await loadAllRooms();
+      
     } catch (error) {
       console.error('Fetch Error:', error);
       const tbody = document.querySelector('#best-room-table tbody');
       if (tbody) tbody.innerHTML = '<tr><td colspan="2" class="text-center text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
     }
+  }
+  
+  // Load all available rooms from student database
+  async function loadAllRooms(){
+    try {
+      const res = await fetch('api/best_fetch_all_rooms.php');
+      const json = await res.json();
+      
+      if (!json || !json.ok) {
+        console.error('API Error:', json?.message || 'Unknown error');
+        return;
+      }
+      
+      allLevels = json.data.levels || [];
+      allRoomsByLevel = json.data.roomsByLevel || {};
+      
+      // Populate level selector
+      const lvlSel = document.getElementById('room-level-select');
+      if (lvlSel) {
+        lvlSel.innerHTML = '<option value="">-- เลือกชั้น --</option>';
+        allLevels.forEach(level => {
+          const opt = document.createElement('option'); 
+          opt.value = level; 
+          opt.textContent = 'ม.' + level; 
+          lvlSel.appendChild(opt);
+        });
+        
+        // Add event listener if not already added
+        if (!lvlSel._eventAdded) {
+          lvlSel.addEventListener('change', () => fillRooms(lvlSel.value));
+          lvlSel._eventAdded = true;
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error loading all rooms:', error);
+    }
+  }
+  
+  function fillRooms(level){
+    const roomSel = document.getElementById('room-room-select');
+    if (!roomSel) return;
+    
+    roomSel.innerHTML = '<option value="">-- เลือกห้อง (ทุกห้อง) --</option>';
+    
+    const rooms = allRoomsByLevel[level] || [];
+    rooms.forEach(room => {
+      const opt = document.createElement('option'); 
+      opt.value = room; 
+      opt.textContent = room; 
+      roomSel.appendChild(opt);
+    });
   }
 
   // Optimized loadStudents function with enhanced performance
@@ -97,12 +129,20 @@
       const rm = document.getElementById('room-room-select')?.value || '';
       
       if (!lvl) {
-        alert('กรุณาเลือกชั้นก่อน');
+        Swal.fire({
+          icon: 'warning',
+          title: 'กรุณาเลือกชั้น',
+          text: 'โปรดเลือกชั้นก่อนทำการค้นหา',
+          confirmButtonText: 'ตกลง'
+        });
         return;
       }
       
+      // Debug: Show what we're searching for
+      console.log(`Searching for level: ${lvl}, room: ${rm || 'ทุกห้อง'}`);
+      
       // Show loading state immediately
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin text-primary"></i> กำลังโหลดข้อมูล...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin text-primary"></i> กำลังค้นหาข้อมูล...</td></tr>';
       
       // Create AbortController for request cancellation
       const controller = new AbortController();
@@ -110,7 +150,12 @@
       
       const url = new URL('api/best_fetch_room_students.php', window.location.origin+window.location.pathname.replace(/\/[^/]*$/, '/'));
       url.searchParams.set('level', lvl);
-      if (rm) url.searchParams.set('room', rm);
+      if (rm) {
+        url.searchParams.set('room', rm);
+      }
+      
+      // Debug: Show the URL being called
+      console.log('Fetching URL:', url.toString());
       
       // Add timeout and optimized fetch options
       const res = await Promise.race([
@@ -141,18 +186,29 @@
       const rows = json.data || [];
       tbody.innerHTML = '';
       
+      // Debug: Show what we received
+      console.log(`Received ${rows.length} students for level ${lvl}, room ${rm || 'ทุกห้อง'}`);
+      
       if (rows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">ไม่พบข้อมูลนักเรียน</td></tr>';
+        const roomText = rm ? `ห้อง ${rm}` : 'ทุกห้อง';
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">
+          <i class="fas fa-info-circle mr-2"></i>ไม่พบนักเรียนใน ม.${lvl} ${roomText}
+        </td></tr>`;
         return;
       }
       
       // Efficient DOM creation with DocumentFragment
       const fragment = document.createDocumentFragment();
+      let studentsWithActivity = 0;
+      let studentsWithoutActivity = 0;
       
       rows.forEach((r, i) => {
         const tr = document.createElement('tr');
         if (!r.has_activity) {
           tr.className = 'table-warning'; // Highlight students without activity
+          studentsWithoutActivity++;
+        } else {
+          studentsWithActivity++;
         }
         
         tr.innerHTML = `
@@ -170,6 +226,17 @@
       });
       
       tbody.appendChild(fragment);
+      
+      // Show summary after data is loaded
+      const roomText = rm ? `ห้อง ${rm}` : 'ทุกห้อง';
+      console.log(`สรุป ม.${lvl} ${roomText}: นักเรียนทั้งหมด ${rows.length} คน, สมัครกิจกรรม ${studentsWithActivity} คน, ไม่ได้สมัคร ${studentsWithoutActivity} คน`);
+      
+      // Show toast notification with summary
+      if (window.toastr) {
+        toastr.success(`พบนักเรียน ${rows.length} คน (สมัครกิจกรรม ${studentsWithActivity} คน, ไม่ได้สมัคร ${studentsWithoutActivity} คน)`, 
+                      `ม.${lvl} ${roomText}`, 
+                      {timeOut: 3000});
+      }
       
       // Reinitialize DataTable with optimized settings
       if (dtStudents) {
