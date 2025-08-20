@@ -13,6 +13,7 @@ function createNavItem($href, $iconClass, $text) {
     echo createNavItem('index.php', 'bi-house', 'หน้าหลัก');
     echo createNavItem('club_list.php', 'bi-list-ul', 'รายการชุมนุม');
     echo createNavItem('best_list.php', 'bi-list-ul', 'Best For Teen 2025');
+    echo createNavItem('best_report.php', 'bi-file-earmark-text', 'รายงาน Best');
     echo createNavItem('club_report.php', 'bi-file-earmark-text', 'รายงานการสมัครชุมนุม');
     echo createNavItem('club_statistic.php', 'bi-bar-chart', 'สถิติการสมัครชุมนุม');
     echo createNavItem('setting.php', 'bi-gear', 'ตั้งค่าวันเวลาสมัคร');
