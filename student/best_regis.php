@@ -27,6 +27,58 @@ require_once('header.php');
         <section class="content">
             <div class="container-fluid">
                 <div class="bg-white rounded-lg shadow-lg p-6 border border-blue-200">
+                    <!-- Registration Status Alert -->
+                    <?php
+                    // อ่านการตั้งค่าการสมัคร Best
+                    $best_setting_file = '../best_regis_setting.json';
+                    $registration_open = true;
+                    $message = '';
+                    $alert_class = 'bg-green-50 border-green-200 text-green-800';
+                    
+                    if (file_exists($best_setting_file)) {
+                        $best_setting = json_decode(file_get_contents($best_setting_file), true);
+                        if (isset($best_setting[$stu_grade])) {
+                            $regis_start = $best_setting[$stu_grade]['regis_start'] ?? '';
+                            $regis_end = $best_setting[$stu_grade]['regis_end'] ?? '';
+                            
+                            if ($regis_start && $regis_end) {
+                                $now = new DateTime();
+                                $start = new DateTime($regis_start);
+                                $end = new DateTime($regis_end);
+                                
+                                if ($now < $start) {
+                                    $registration_open = false;
+                                    $message = 'การสมัครกิจกรรม Best สำหรับ ' . $stu_grade . ' จะเปิดในวันที่ ' . $start->format('d/m/Y เวลา H:i น.');
+                                    $alert_class = 'bg-yellow-50 border-yellow-200 text-yellow-800';
+                                } elseif ($now > $end) {
+                                    $registration_open = false;
+                                    $message = 'หมดเวลาการสมัครกิจกรรม Best สำหรับ ' . $stu_grade . ' แล้ว (ปิดรับสมัครเมื่อ ' . $end->format('d/m/Y เวลา H:i น.') . ')';
+                                    $alert_class = 'bg-red-50 border-red-200 text-red-800';
+                                } else {
+                                    $message = '🎉 กำลังเปิดรับสมัครกิจกรรม Best สำหรับ ' . $stu_grade . ' (ปิดรับสมัครวันที่ ' . $end->format('d/m/Y เวลา H:i น.') . ')';
+                                    $alert_class = 'bg-green-50 border-green-200 text-green-800';
+                                }
+                            }
+                        }
+                    }
+                    
+                    if ($message): ?>
+                    <div class="mb-4 p-4 border rounded-lg <?php echo $alert_class; ?>">
+                        <div class="flex items-center">
+                            <div class="mr-3">
+                                <?php if ($registration_open): ?>
+                                    <span class="text-2xl">✅</span>
+                                <?php elseif (strpos($alert_class, 'yellow') !== false): ?>
+                                    <span class="text-2xl">⏰</span>
+                                <?php else: ?>
+                                    <span class="text-2xl">❌</span>
+                                <?php endif; ?>
+                            </div>
+                            <p class="font-medium"><?php echo $message; ?></p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    
                     <div id="status-box" class="mb-4"></div>
                     <div class="overflow-x-auto">
                         <table id="best-table" class="min-w-full border border-gray-200 rounded-lg shadow-sm bg-indigo-50">
@@ -81,12 +133,26 @@ function render(list, status) {
   table.clear();
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
+  
+  // Check if registration is open from PHP
+  const registrationOpen = <?php echo $registration_open ? 'true' : 'false'; ?>;
+  
   list.forEach(a => {
     const current = parseInt(a.current_members_count||0);
     const max = parseInt(a.max_members||0);
     const percent = max>0 ? Math.round((current/max)*100) : 0;
     const grades = (a.grade_levels||'');
-    const disabled = percent>=100 || status.registered;
+    const disabled = percent>=100 || status.registered || !registrationOpen;
+    
+    let buttonText = 'สมัคร';
+    if (!registrationOpen) {
+      buttonText = 'ปิดรับสมัคร';
+    } else if (percent >= 100) {
+      buttonText = 'เต็มแล้ว';
+    } else if (status.registered) {
+      buttonText = 'สมัครแล้ว';
+    }
+    
     const row = `
       <tr>
         <td class=\"py-2 px-4 text-center\">${a.id}</td>
@@ -94,7 +160,7 @@ function render(list, status) {
         <td class=\"py-2 px-4 text-center\">${grades}</td>
         <td class=\"py-2 px-4 text-center\">${current} / ${max}</td>
         <td class=\"py-2 px-4 text-center\">
-          <button class=\"apply btn btn-sm btn-primary\" data-id=\"${a.id}\" ${disabled?'disabled':''}>สมัคร</button>
+          <button class=\"apply btn btn-sm btn-primary\" data-id=\"${a.id}\" ${disabled?'disabled':''}>${buttonText}</button>
         </td>
       </tr>`;
     tbody.insertAdjacentHTML('beforeend', row);

@@ -126,6 +126,29 @@ switch ($action) {
             jsonError('ระดับชั้นไม่ตรงกับที่กำหนด');
         }
 
+        // Check Best registration time setting
+        $best_setting_file = __DIR__ . '/../best_regis_setting.json';
+        if (file_exists($best_setting_file)) {
+            $best_setting = json_decode(file_get_contents($best_setting_file), true);
+            if (isset($best_setting[$stuGrade])) {
+                $regis_start = $best_setting[$stuGrade]['regis_start'] ?? '';
+                $regis_end = $best_setting[$stuGrade]['regis_end'] ?? '';
+                
+                if ($regis_start && $regis_end) {
+                    $now = new DateTime();
+                    $start = new DateTime($regis_start);
+                    $end = new DateTime($regis_end);
+                    
+                    if ($now < $start) {
+                        jsonError('ยังไม่ถึงเวลาเปิดรับสมัครกิจกรรม Best สำหรับ ' . $stuGrade);
+                    }
+                    if ($now > $end) {
+                        jsonError('หมดเวลาการสมัครกิจกรรม Best สำหรับ ' . $stuGrade . ' แล้ว');
+                    }
+                }
+            }
+        }
+
         // one activity per year per student enforcement via unique key
         // but also check capacity
         $current = $bestModel->countMembers($id, $current_year);

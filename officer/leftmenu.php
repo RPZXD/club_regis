@@ -17,6 +17,7 @@ function createNavItem($href, $iconClass, $text) {
     echo createNavItem('club_report.php', 'bi-file-earmark-text', 'รายงานการสมัครชุมนุม');
     echo createNavItem('club_statistic.php', 'bi-bar-chart', 'สถิติการสมัครชุมนุม');
     echo createNavItem('setting.php', 'bi-gear', 'ตั้งค่าวันเวลาสมัคร');
+    echo createNavItem('best_setting.php', 'bi-star', 'ตั้งค่าวันเวลาสมัคร Best');
     // เพิ่มเมนูเฉพาะครู
     echo createNavItem('../logout.php', 'bi-box-arrow-right', 'ออกจากระบบ');
 
