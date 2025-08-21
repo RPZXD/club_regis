@@ -122,33 +122,37 @@ require_once('header.php');
                 </div>
 
                 <!-- Members Modal -->
-                <div id="members-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 overflow-auto p-4">
-                    <div class="bg-white rounded shadow-xl max-w-3xl w-full p-4" style="max-height:calc(100vh - 3rem); overflow-y:auto;">
-                         <h3 class="text-lg font-semibold mb-3">จัดการสมาชิก</h3>
-                         <div class="flex gap-2 items-end mb-3">
-                             <div>
-                                 <label class="block text-sm">รหัสนักเรียน</label>
-                                 <input type="text" id="member-student-id" class="border rounded px-2 py-1">
-                             </div>
-                             <button id="btn-add-member" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded">เพิ่มสมาชิก</button>
-                             <button id="btn-close-members" class="ml-auto px-3 py-1 bg-gray-300 hover:bg-gray-400 rounded">ปิด</button>
-                         </div>
-+                        <div class="overflow-auto" style="max-height:60vh;">
-+                            <table id="members-table" class="min-w-full border w-full">
-+                                <thead>
-+                                    <tr class="bg-gray-100">
-+                                        <th class="p-2 border">รหัส</th>
-+                                        <th class="p-2 border">ชื่อ</th>
-+                                        <th class="p-2 border">ห้อง</th>
-+                                        <th class="p-2 border">เมื่อ</th>
-+                                        <th class="p-2 border">จัดการ</th>
-+                                    </tr>
-+                                </thead>
-+                                <tbody id="members-body"></tbody>
-+                            </table>
-+                        </div>
-                     </div>
-                 </div>
+                <div id="members-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 overflow-auto flex items-start justify-center p-4">
+                    <div class="bg-white rounded shadow-xl max-w-3xl w-full my-8" style="max-height: calc(100vh - 4rem);">
+                        <div class="p-4 border-b">
+                            <h3 class="text-lg font-semibold">จัดการสมาชิก</h3>
+                        </div>
+                        <div class="p-4 border-b">
+                            <div class="flex gap-2 items-end">
+                                <div>
+                                    <label class="block text-sm">รหัสนักเรียน</label>
+                                    <input type="text" id="member-student-id" class="border rounded px-2 py-1">
+                                </div>
+                                <button id="btn-add-member" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded">เพิ่มสมาชิก</button>
+                                <button id="btn-close-members" class="ml-auto px-3 py-1 bg-gray-300 hover:bg-gray-400 rounded">ปิด</button>
+                            </div>
+                        </div>
+                        <div class="overflow-auto" style="max-height: calc(100vh - 12rem);">
+                            <table id="members-table" class="min-w-full border">
+                                <thead class="sticky top-0 bg-white">
+                                    <tr class="bg-gray-100">
+                                        <th class="p-2 border">รหัส</th>
+                                        <th class="p-2 border">ชื่อ</th>
+                                        <th class="p-2 border">ห้อง</th>
+                                        <th class="p-2 border">เมื่อ</th>
+                                        <th class="p-2 border">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="members-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </section>
