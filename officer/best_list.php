@@ -6,6 +6,17 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['rol
 }
 $config = json_decode(file_get_contents('../config.json'), true);
 $global = $config['global'];
+
+// Initialize tables for admin interface
+require_once __DIR__ . '/../classes/DatabaseClub.php';
+require_once __DIR__ . '/../models/BestActivity.php';
+use App\DatabaseClub;
+use App\Models\BestActivity;
+
+$db = new DatabaseClub();
+$pdo = $db->getPDO();
+$bestModel = new BestActivity($pdo, true); // Enable auto table initialization for admin
+
 require_once('header.php');
 ?>
 <body class="hold-transition sidebar-mini layout-fixed light-mode">
@@ -318,7 +329,7 @@ function removeActivity(id) {
         showCancelButton: true,
         confirmButtonText: 'ลบ',
         cancelButtonText: 'ยกเลิก'
-    }).then(res => {
+    }).then((res) => {
         if (!res.isConfirmed) return;
         const fd = new FormData(); fd.append('action','delete'); fd.append('id', id);
         fetch('../controllers/BestActivityController.php', { method:'POST', body: fd })
