@@ -17,80 +17,122 @@ use App\DatabaseUsers;
 
 $startTime = microtime(true);
 
-try {
-    $club = new DatabaseClub();
-    $pdo = $club->getPDO();
-    $users = new DatabaseUsers();
-    $term = \TermPee::getCurrent();
-    $year = (int)$term->pee;
-    $level = isset($_GET['level']) ? (int)$_GET['level'] : 1; // 1..6
+    try {
+        $club = new DatabaseClub();
+        $pdo = $club->getPDO();
+        $users = new DatabaseUsers();
+        $term = \TermPee::getCurrent();
+        $year = (int)$term->pee;
+        $level = isset($_GET['level']) ? (int)$_GET['level'] : 1; // 1..6
 
-    // Validate level input
-    if ($level < 1 || $level > 6) {
-        throw new InvalidArgumentException('Invalid level specified');
-    }
+        // Validate level input
+        if ($level < 1 || $level > 6) {
+            throw new InvalidArgumentException('Invalid level specified: ' . $level);
+        }
 
-    $pdo->beginTransaction();
+        // Check connections
+        if (!$pdo) {
+            throw new Exception('Club database connection failed');
+        }
+        
+        if (!$term) {
+            throw new Exception('Cannot get current term');
+        }
+        
+        if (!$year || $year < 2020) {
+            throw new Exception('Invalid year: ' . $year);
+        }
 
-    // Optimized query to get activity counts by level using best_regis table
-    $stmt = $pdo->prepare("
-        SELECT 
-            ba.id,
-            ba.name,
-            COUNT(br.student_id) as count
-        FROM best_activities ba
-        LEFT JOIN best_regis br ON ba.id = br.activity_id AND br.year = :year
-        WHERE ba.year = :year2
-        AND (br.student_id IS NULL OR SUBSTRING(br.student_id, 1, 1) = :level_str)
-        GROUP BY ba.id, ba.name
-        ORDER BY count DESC, ba.name ASC
-    ");
-    
-    $levelStr = (string)$level;
-    $stmt->bindParam(':year', $year, PDO::PARAM_INT);
-    $stmt->bindParam(':year2', $year, PDO::PARAM_INT);  
-    $stmt->bindParam(':level_str', $levelStr, PDO::PARAM_STR);
-    $stmt->execute();
-    
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Convert to proper format
-    $out = [];
-    foreach ($results as $row) {
-        $out[] = [
-            'id' => (int)$row['id'],
-            'name' => $row['name'],
-            'count' => (int)$row['count']
-        ];
-    }
+        $pdo->beginTransaction();
 
-    $pdo->commit();
-    
-    $loadTime = (microtime(true) - $startTime) * 1000;
-    
-    echo json_encode([
-        'ok' => true,
-        'data' => $out,
-        'meta' => [
-            'level' => $level,
-            'year' => $year,
-            'count' => count($out),
-            'loadTime' => round($loadTime, 2) . 'ms'
-        ]
-    ], JSON_NUMERIC_CHECK);
-    
-} catch (Exception $e) {
+        // Check if required tables exist
+        $checkBestActivities = $pdo->query("SHOW TABLES LIKE 'best_activities'")->rowCount();
+        if ($checkBestActivities === 0) {
+            throw new Exception('Table best_activities does not exist');
+        }
+
+        $checkBestRegis = $pdo->query("SHOW TABLES LIKE 'best_regis'")->rowCount();
+        $checkBestMembers = $pdo->query("SHOW TABLES LIKE 'best_members'")->rowCount();
+        
+        if ($checkBestRegis > 0) {
+            $memberTable = 'best_regis';
+            $memberIdColumn = 'student_id';
+            $memberActivityColumn = 'activity_id';
+        } elseif ($checkBestMembers > 0) {
+            $memberTable = 'best_members';
+            $memberIdColumn = 'student_id';
+            $memberActivityColumn = 'activity_id';
+        } else {
+            throw new Exception('No member registration table found (best_regis or best_members)');
+        }
+
+        // Simple approach: get activities first, then count registrations by level
+        $activityStmt = $pdo->prepare("SELECT id, name FROM best_activities WHERE year = ? ORDER BY name");
+        $activityStmt->execute([$year]);
+        $activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $out = [];
+        
+        foreach ($activities as $activity) {
+            // Count registrations for this activity by students in the specified level
+            // Assuming student IDs start with level number (e.g., 1xxxxx for ม.1)
+            $countStmt = $pdo->prepare("
+                SELECT COUNT(*) as count 
+                FROM {$memberTable} 
+                WHERE {$memberActivityColumn} = ? 
+                AND year = ? 
+                AND SUBSTRING({$memberIdColumn}, 1, 1) = ?
+            ");
+            
+            $countStmt->execute([$activity['id'], $year, (string)$level]);
+            $count = $countStmt->fetchColumn();
+            
+            $out[] = [
+                'id' => (int)$activity['id'],
+                'name' => $activity['name'],
+                'count' => (int)$count
+            ];
+        }
+
+        $pdo->commit();
+        
+        $loadTime = (microtime(true) - $startTime) * 1000;
+        
+        echo json_encode([
+            'ok' => true,
+            'data' => $out,
+            'meta' => [
+                'level' => $level,
+                'year' => $year,
+                'count' => count($out),
+                'table_used' => $memberTable,
+                'loadTime' => round($loadTime, 2) . 'ms'
+            ]
+        ], JSON_NUMERIC_CHECK);} catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollback();
     }
     
-    error_log("Best Level Activity API Error: " . $e->getMessage());
+    $errorMessage = $e->getMessage();
+    $errorFile = $e->getFile();
+    $errorLine = $e->getLine();
+    
+    error_log("Best Level Activity API Error: " . $errorMessage . " in " . $errorFile . " on line " . $errorLine);
     
     echo json_encode([
         'ok' => false,
         'data' => [],
         'message' => 'เกิดข้อผิดพลาดในการโหลดข้อมูล',
-        'debug' => ($_ENV['APP_DEBUG'] ?? false) ? $e->getMessage() : null
+        'debug' => [
+            'error' => $errorMessage,
+            'file' => basename($errorFile),
+            'line' => $errorLine,
+            'level' => isset($level) ? $level : 'unknown',
+            'year' => isset($year) ? $year : 'unknown',
+            'session_role' => $_SESSION['role'] ?? 'none',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'php_version' => PHP_VERSION
+        ]
     ]);
 }
 ?>

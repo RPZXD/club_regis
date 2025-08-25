@@ -37,13 +37,56 @@
       return;
     }
     
-    rows.sort((a,b)=> b.count - a.count).forEach((r,idx)=>{
+    // Filter out activities with 0 count
+    const activeRows = rows.filter(r => r.count > 0);
+    
+    if (activeRows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted p-4">
+        <div class="d-flex flex-column align-items-center">
+          <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">ยังไม่มีการลงทะเบียน</h5>
+          <p class="text-muted mb-0">นักเรียนชั้น ม.${level} ยังไม่ได้ลงทะเบียนกิจกรรมใดๆ</p>
+          <small class="text-muted mt-2">
+            <i class="fas fa-info-circle mr-1"></i>
+            ${rows.length > 0 ? `มี ${rows.length} กิจกรรมเปิดให้ลงทะเบียน` : 'ไม่มีกิจกรรมที่เปิดรับ'}
+          </small>
+        </div>
+      </td></tr>`;
+      
+      // Disable DataTable features for empty state
+      if (dt) {
+        dt.destroy();
+        dt = null;
+      }
+      return;
+    }
+    
+    activeRows.sort((a,b)=> b.count - a.count).forEach((r,idx)=>{
       const tr = document.createElement('tr');
+      // Add different badge colors based on ranking
+      let badgeClass = 'badge-primary';
+      if (idx === 0 && r.count > 0) badgeClass = 'badge-success'; // Most popular
+      else if (r.count < 5) badgeClass = 'badge-warning'; // Low registration
+      
       tr.innerHTML = `<td class="text-center font-weight-bold">${idx+1}</td>
                       <td><i class="fas fa-star text-warning mr-2"></i>${r.name}</td>
-                      <td class="text-center"><span class="badge badge-primary badge-pill">${r.count}</span></td>`;
+                      <td class="text-center"><span class="badge ${badgeClass} badge-pill">${r.count}</span></td>`;
       tbody.appendChild(tr);
     });
+    
+    // Add summary info after table
+    const totalRegistrations = activeRows.reduce((sum, r) => sum + r.count, 0);
+    const summaryRow = document.createElement('tr');
+    summaryRow.className = 'table-info';
+    summaryRow.innerHTML = `
+      <td colspan="3" class="text-center font-weight-bold">
+        <i class="fas fa-chart-line mr-2"></i>
+        รวมทั้งหมด: ${totalRegistrations} คน ใน ${activeRows.length} กิจกรรม 
+        ${rows.length > activeRows.length ? `(จาก ${rows.length} กิจกรรมที่เปิด)` : ''}
+      </td>
+    `;
+    tbody.appendChild(summaryRow);
+    
     if (dt) dt.destroy();
     dt = $('#best-level-activity-table').DataTable({ 
       paging:true, 
@@ -68,26 +111,32 @@
     });
   }
   function renderChart(rows){
-    if (!rows || rows.length === 0) return;
-    
     const canvas = document.getElementById('best-level-chart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (chart) chart.destroy();
     
+    // Filter out activities with 0 count for chart
+    const activeRows = rows ? rows.filter(r => r.count > 0) : [];
+    
+    if (!activeRows || activeRows.length === 0) {
+      // Don't render chart if no data
+      return;
+    }
+    
     // Create gradient colors
-    const colors = rows.map((_, i) => {
-      const hue = (i * 360 / rows.length) % 360;
+    const colors = activeRows.map((_, i) => {
+      const hue = (i * 360 / activeRows.length) % 360;
       return `hsla(${hue}, 70%, 60%, 0.8)`;
     });
     
     chart = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: rows.map(r=>r.name),
+        labels: activeRows.map(r=>r.name),
         datasets: [{ 
           label:'จำนวนผู้สมัคร', 
-          data: rows.map(r=>parseInt(r.count) || 0), 
+          data: activeRows.map(r=>parseInt(r.count) || 0), 
           backgroundColor: colors,
           borderColor: colors.map(c => c.replace('0.8', '1')),
           borderWidth: 2

@@ -78,11 +78,26 @@ try {
     foreach (array_chunk($studentIds, $chunkSize) as $chunk) {
         $placeholders = str_repeat('?,', count($chunk) - 1) . '?';
         
-        // Use best_regis table instead of best_members for better performance  
-        $memberQuery = "SELECT br.student_id, ba.name as activity_name, br.created_at
-                        FROM best_regis br 
-                        LEFT JOIN best_activities ba ON ba.id = br.activity_id AND ba.year = br.year
-                        WHERE br.year = ? AND br.student_id IN ($placeholders)";
+        // Check which table exists and use appropriate query
+        $checkBestRegis = $pdo->query("SHOW TABLES LIKE 'best_regis'")->rowCount();
+        $checkBestMembers = $pdo->query("SHOW TABLES LIKE 'best_members'")->rowCount();
+        
+        if ($checkBestRegis > 0) {
+            // Use best_regis table
+            $memberQuery = "SELECT br.student_id, ba.name as activity_name, br.created_at
+                            FROM best_regis br 
+                            LEFT JOIN best_activities ba ON ba.id = br.activity_id AND ba.year = br.year
+                            WHERE br.year = ? AND br.student_id IN ($placeholders)";
+        } elseif ($checkBestMembers > 0) {
+            // Use best_members table
+            $memberQuery = "SELECT bm.student_id, ba.name as activity_name, bm.created_at
+                            FROM best_members bm 
+                            LEFT JOIN best_activities ba ON ba.id = bm.activity_id AND ba.year = bm.year
+                            WHERE bm.year = ? AND bm.student_id IN ($placeholders)";
+        } else {
+            // No member table found, skip member lookup
+            continue;
+        }
         
         $memberParams = array_merge([$year], $chunk);
         $memberStmt = $pdo->prepare($memberQuery);
@@ -140,17 +155,30 @@ try {
     ], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
     
 } catch (Exception $e) {
-    if (isset($pdo) && $pdo->inTransaction()) {
+    if (isset($pdo) && $pdo && $pdo->inTransaction()) {
         $pdo->rollback();
     }
     
-    error_log("Best Room Students API Error: " . $e->getMessage());
+    $errorMessage = $e->getMessage();
+    $errorFile = $e->getFile();
+    $errorLine = $e->getLine();
+    
+    error_log("Best Room Students API Error: " . $errorMessage . " in " . $errorFile . " on line " . $errorLine);
     
     echo json_encode([
         'ok' => false, 
-        'message' => 'เกิดข้อผิดพลาดในการโหลดข้อมูล', 
+        'message' => 'เกิดข้อผิดพลาดในการโหลดข้อมูลรายชื่อนักเรียน', 
         'data' => [],
-        'debug' => ($_ENV['APP_DEBUG'] ?? false) ? $e->getMessage() : null
+        'debug' => [
+            'error' => $errorMessage,
+            'file' => basename($errorFile),
+            'line' => $errorLine,
+            'level' => isset($level) ? $level : 'unknown',
+            'room' => isset($room) ? $room : 'unknown',
+            'year' => isset($year) ? $year : 'unknown',
+            'session_role' => $_SESSION['role'] ?? 'none',
+            'timestamp' => date('Y-m-d H:i:s')
+        ]
     ]);
 }
 ?>
