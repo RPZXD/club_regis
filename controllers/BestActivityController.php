@@ -64,6 +64,7 @@ function validateGradeLevel($activity, $stu) {
 
 switch ($action) {
     case 'list':
+<<<<<<< HEAD
         try {
             // Use optimized method to get activities with member counts in single query
             $activities = $bestModel->getAllWithMemberCounts($current_year);
@@ -141,7 +142,13 @@ switch ($action) {
             jsonError('เกิดข้อผิดพลาดในการสมัคร: ' . $e->getMessage());
         } catch (Exception $e) {
             jsonError('เกิดข้อผิดพลาด: ' . $e->getMessage());
+=======
+        $activities = $bestModel->getAll($current_year);
+        foreach ($activities as &$a) {
+            $a['current_members_count'] = $bestModel->countMembers(intval($a['id']), intval($a['year']));
+>>>>>>> parent of 2ad911f (Add student registration and UI improvements for Best activities)
         }
+        echo json_encode(['success' => true, 'data' => $activities, 'year' => $current_year]);
         exit;
 
     case 'create':
@@ -213,25 +220,28 @@ switch ($action) {
         exit;
 
     case 'add_member':
-        // Officer adding member action (keep existing code but optimize)
         $id = intval($_POST['id'] ?? 0);
-        $student_id = trim($_POST['student_id'] ?? '');
-        
         // If role is student, force student_id from session for security
+        $student_id = trim($_POST['student_id'] ?? '');
         if (isset($_SESSION['role']) && $_SESSION['role'] === 'นักเรียน') {
             if (isset($_SESSION['user']['Stu_id'])) {
                 $student_id = $_SESSION['user']['Stu_id'];
             }
         }
-        
         if ($id <= 0 || $student_id === '') jsonError('ข้อมูลไม่ครบถ้วน');
+        $activity = $bestModel->getById($id);
+        if (!$activity || intval($activity['year']) !== intval($current_year)) jsonError('ไม่พบกิจกรรมปีนี้');
 
-        try {
-            $activity = $bestModel->getById($id);
-            if (!$activity || intval($activity['year']) !== intval($current_year)) {
-                jsonError('ไม่พบกิจกรรมปีนี้');
-            }
+        // check grade level eligibility
+        $stu = $dbUsers->getStudentByUsername($student_id);
+        if (!$stu) jsonError('ไม่พบนักเรียน');
+        $allowed = array_map('trim', preg_split('/[ ,\/]+/', $activity['grade_levels']));
+        $stuGrade = 'ม.'.$stu['Stu_major'];
+        if (!in_array($stuGrade, $allowed, true)) {
+            jsonError('ระดับชั้นไม่ตรงกับที่กำหนด');
+        }
 
+<<<<<<< HEAD
             // Check grade level eligibility
             $stu = $dbUsers->getStudentByUsername($student_id);
             if (!$stu) jsonError('ไม่พบนักเรียน');
@@ -246,27 +256,54 @@ switch ($action) {
                 $timeValidation = checkRegistrationTime($gradeValidation['grade']);
                 if (!$timeValidation['valid']) {
                     jsonError($timeValidation['message']);
+=======
+        // Check Best registration time setting
+        $best_setting_file = __DIR__ . '/../best_regis_setting.json';
+        if (file_exists($best_setting_file)) {
+            $best_setting = json_decode(file_get_contents($best_setting_file), true);
+            if (isset($best_setting[$stuGrade])) {
+                $regis_start = $best_setting[$stuGrade]['regis_start'] ?? '';
+                $regis_end = $best_setting[$stuGrade]['regis_end'] ?? '';
+                
+                if ($regis_start && $regis_end) {
+                    $now = new DateTime();
+                    $start = new DateTime($regis_start);
+                    $end = new DateTime($regis_end);
+                    
+                    if ($now < $start) {
+                        jsonError('ยังไม่ถึงเวลาเปิดรับสมัครกิจกรรม Best สำหรับ ' . $stuGrade);
+                    }
+                    if ($now > $end) {
+                        jsonError('หมดเวลาการสมัครกิจกรรม Best สำหรับ ' . $stuGrade . ' แล้ว');
+                    }
+>>>>>>> parent of 2ad911f (Add student registration and UI improvements for Best activities)
                 }
             }
+        }
 
-            // Check capacity
-            $current = $bestModel->countMembers($id, $current_year);
-            if ($current >= intval($activity['max_members'])) {
-                jsonError('กิจกรรมเต็มแล้ว');
-            }
+        // one activity per year per student enforcement via unique key
+        // but also check capacity
+        $current = $bestModel->countMembers($id, $current_year);
+        if ($current >= intval($activity['max_members'])) {
+            jsonError('กิจกรรมเต็มแล้ว');
+        }
 
+<<<<<<< HEAD
             // Insert - use optimized method
             $ok = $bestModel->addMember($id, $student_id, $current_year);
             
+=======
+        // insert
+        try {
+            $stmt = $pdo->prepare("INSERT INTO best_members (activity_id, student_id, year, created_at) VALUES (:activity_id, :student_id, :year, NOW())");
+            $ok = $stmt->execute(['activity_id' => $id, 'student_id' => $student_id, 'year' => $current_year]);
+>>>>>>> parent of 2ad911f (Add student registration and UI improvements for Best activities)
             echo json_encode(['success' => $ok]);
-            
         } catch (PDOException $e) {
             if (strpos($e->getMessage(), 'uniq_student_year') !== false) {
                 jsonError('นักเรียนลงทะเบียนกิจกรรม Best For Teen ไปแล้วในปีนี้');
             }
             jsonError('บันทึกไม่ได้: '.$e->getMessage());
-        } catch (Exception $e) {
-            jsonError('เกิดข้อผิดพลาด: ' . $e->getMessage());
         }
         exit;
 
@@ -274,6 +311,7 @@ switch ($action) {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'นักเรียน' || !isset($_SESSION['user']['Stu_id'])) {
             jsonError('unauthorized');
         }
+<<<<<<< HEAD
         
         try {
             $sid = $_SESSION['user']['Stu_id'];
@@ -287,6 +325,16 @@ switch ($action) {
         } catch (Exception $e) {
             jsonError('เกิดข้อผิดพลาดในการตรวจสอบสถานะ');
         }
+=======
+        $sid = $_SESSION['user']['Stu_id'];
+        $stmt = $pdo->prepare("SELECT bm.activity_id, bm.created_at, ba.name, ba.grade_levels, ba.max_members
+                               FROM best_members bm
+                               JOIN best_activities ba ON ba.id = bm.activity_id
+                               WHERE bm.student_id = :sid AND bm.year = :year");
+        $stmt->execute(['sid' => $sid, 'year' => $current_year]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'registered' => !!$row, 'data' => $row]);
+>>>>>>> parent of 2ad911f (Add student registration and UI improvements for Best activities)
         exit;
 
     case 'remove_member':
@@ -298,6 +346,6 @@ switch ($action) {
         exit;
 
     default:
-        jsonError('Invalid action');
+        echo json_encode(['success' => false, 'message' => 'Invalid action']);
         exit;
 }

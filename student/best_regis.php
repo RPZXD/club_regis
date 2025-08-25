@@ -106,87 +106,30 @@ require_once('header.php');
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 let table;
-let isRegistering = false;
-let cachedData = null;
-let lastFetch = 0;
-const CACHE_DURATION = 30000; // 30 seconds
 
 function showToast(message, type = 'info') {
   const icon = ['success','error','warning','info','question'].includes(type) ? type : 'info';
   Swal.fire({ toast: true, position: 'top-end', icon, title: message, showConfirmButton: false, timer: 2000, timerProgressBar: true });
 }
 
-function showLoading() {
-    if (!document.getElementById('loading-overlay')) {
-        const overlay = document.createElement('div');
-        overlay.id = 'loading-overlay';
-        overlay.className = 'fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50';
-        overlay.innerHTML = '<div class="bg-white p-4 rounded shadow"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div><div class="mt-2 text-sm">กำลังโหลด...</div></div>';
-        document.body.appendChild(overlay);
-    }
+function loadStatus() {
+  return fetch('../controllers/BestActivityController.php?action=my_status').then(r=>r.json());
 }
-
-function hideLoading() {
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay) overlay.remove();
-}
-
-async function loadStatus() {
-  const now = Date.now();
-  if (cachedData && cachedData.status && (now - lastFetch < CACHE_DURATION)) {
-    return cachedData.status;
-  }
-  
-  try {
-    const response = await fetch('../controllers/BestActivityController.php?action=my_status');
-    const data = await response.json();
-    if (!cachedData) cachedData = {};
-    cachedData.status = data;
-    return data;
-  } catch (error) {
-    showToast('เกิดข้อผิดพลาดในการโหลดสถานะ', 'error');
-    return { success: false, registered: false };
-  }
-}
-
-async function loadList() {
-  const now = Date.now();
-  if (cachedData && cachedData.list && (now - lastFetch < CACHE_DURATION)) {
-    return cachedData.list;
-  }
-  
-  try {
-    const response = await fetch('../controllers/BestActivityController.php?action=list');
-    const data = await response.json();
-    if (!cachedData) cachedData = {};
-    cachedData.list = data;
-    lastFetch = now;
-    return data;
-  } catch (error) {
-    showToast('เกิดข้อผิดพลาดในการโหลดรายการ', 'error');
-    return { success: false, data: [] };
-  }
+function loadList() {
+  return fetch('../controllers/BestActivityController.php?action=list').then(r=>r.json());
 }
 
 function renderStatus(data) {
   const box = document.getElementById('status-box');
   if (data.registered) {
-    box.innerHTML = `<div class="p-3 rounded bg-green-50 border border-green-200">คุณได้สมัครกิจกรรม <b>${data.data.name}</b> แล้ว</div>`;
+    box.innerHTML = `<div class=\"p-3 rounded bg-green-50 border border-green-200\">คุณได้สมัครกิจกรรม <b>${data.data.name}</b> แล้ว</div>`;
   } else {
-    box.innerHTML = `<div class="p-3 rounded bg-yellow-50 border border-yellow-200">คุณยังไม่ได้สมัครกิจกรรม สามารถเลือกได้ 1 รายการ/ปี</div>`;
+    box.innerHTML = `<div class=\"p-3 rounded bg-yellow-50 border border-yellow-200\">คุณยังไม่ได้สมัครกิจกรรม สามารถเลือกได้ 1 รายการ/ปี</div>`;
   }
 }
 
 function render(list, status) {
-  if (!table) { 
-    table = $('#best-table').DataTable({ 
-      language: { search: 'ค้นหา:' },
-      pageLength: 15,
-      processing: false,
-      deferRender: true
-    }); 
-  }
-  
+  if (!table) { table = $('#best-table').DataTable({ language: { search: 'ค้นหา:' } }); }
   table.clear();
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
@@ -202,125 +145,50 @@ function render(list, status) {
     const disabled = percent>=100 || status.registered || !registrationOpen;
     
     let buttonText = 'สมัคร';
-    let buttonClass = 'apply btn btn-sm btn-primary';
-    
     if (!registrationOpen) {
       buttonText = 'ปิดรับสมัคร';
-      buttonClass = 'btn btn-sm btn-secondary';
     } else if (percent >= 100) {
       buttonText = 'เต็มแล้ว';
-      buttonClass = 'btn btn-sm btn-danger';
     } else if (status.registered) {
       buttonText = 'สมัครแล้ว';
-      buttonClass = 'btn btn-sm btn-success';
     }
     
-    // Progress bar
-    let barColor = 'bg-green-400';
-    if (percent >= 100) barColor = 'bg-red-500';
-    else if (percent >= 70) barColor = 'bg-yellow-400';
-    
-    const progressBar = `
-      <div class="w-24 mx-auto">
-        <div class="relative h-4 bg-gray-200 rounded-full overflow-hidden">
-          <div class="absolute left-0 top-0 h-4 ${barColor}" style="width:${Math.min(percent, 100)}%"></div>
-          <div class="absolute w-full text-xs text-center top-0 left-0 h-4 leading-4">${current}/${max}</div>
-        </div>
-      </div>`;
-    
     const row = `
-      <tr class="hover:bg-blue-50">
-        <td class="py-2 px-4 text-center font-medium">${a.id}</td>
-        <td class="py-2 px-4">
-          <div class="font-medium text-blue-800">${a.name||''}</div>
-          ${a.description ? `<div class="text-sm text-gray-600">${a.description}</div>` : ''}
-        </td>
-        <td class="py-2 px-4 text-center">
-          <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">${grades}</span>
-        </td>
-        <td class="py-2 px-4 text-center">${progressBar}</td>
-        <td class="py-2 px-4 text-center">
-          <button class="${buttonClass}" data-id="${a.id}" ${disabled?'disabled':''}>${buttonText}</button>
+      <tr>
+        <td class=\"py-2 px-4 text-center\">${a.id}</td>
+        <td class=\"py-2 px-4\">${a.name||''}</td>
+        <td class=\"py-2 px-4 text-center\">${grades}</td>
+        <td class=\"py-2 px-4 text-center\">${current} / ${max}</td>
+        <td class=\"py-2 px-4 text-center\">
+          <button class=\"apply btn btn-sm btn-primary\" data-id=\"${a.id}\" ${disabled?'disabled':''}>${buttonText}</button>
         </td>
       </tr>`;
     tbody.insertAdjacentHTML('beforeend', row);
   });
-  
   table.rows.add($(tbody).find('tr')).draw(false);
 }
 
-async function registerActivity(id) {
-  if (isRegistering) return;
-  
-  // Confirm registration
-  const result = await Swal.fire({
-    title: 'ยืนยันการสมัคร',
-    text: 'คุณต้องการสมัครกิจกรรมนี้ใช่หรือไม่?',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'ใช่, สมัคร',
-    cancelButtonText: 'ยกเลิก'
-  });
-  
-  if (!result.isConfirmed) return;
-  
-  isRegistering = true;
-  showLoading();
-  
-  try {
-    const fd = new FormData();
-    fd.append('action','register');
-    fd.append('activity_id', id);
-    
-    const response = await fetch('../controllers/BestActivityController.php', { 
-      method: 'POST', 
-      body: fd 
+function registerActivity(id) {
+  const fd = new FormData();
+  fd.append('action','add_member');
+  fd.append('id', id);
+  fetch('../controllers/BestActivityController.php', { method: 'POST', body: fd })
+    .then(r=>r.json()).then(d=>{
+      if (!d.success) showToast(d.message||'สมัครไม่สำเร็จ','error');
+      else showToast('สมัครสำเร็จ','success');
+      init();
     });
-    const data = await response.json();
-    
-    if (!data.success) {
-      showToast(data.message||'สมัครไม่สำเร็จ','error');
-    } else {
-      showToast('สมัครสำเร็จ! 🎉','success');
-      // Clear cache to force refresh
-      cachedData = null;
-      await init();
-    }
-  } catch (error) {
-    showToast('เกิดข้อผิดพลาดในการสมัคร','error');
-  } finally {
-    isRegistering = false;
-    hideLoading();
-  }
 }
 
-async function init() {
-  showLoading();
-  try {
-    const [status, list] = await Promise.all([loadStatus(), loadList()]);
+function init() {
+  Promise.all([loadStatus(), loadList()]).then(([status, list])=>{
     renderStatus(status);
     render(list.data||[], status);
-    
-    // Add event listeners to apply buttons
     document.querySelectorAll('.apply').forEach(btn=>{
-      btn.addEventListener('click', ()=> {
-        if (!btn.disabled && !isRegistering) {
-          registerActivity(btn.dataset.id);
-        }
-      });
+      btn.addEventListener('click', ()=> registerActivity(btn.dataset.id));
     });
-  } catch (error) {
-    showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล','error');
-  } finally {
-    hideLoading();
-  }
+  });
 }
-
-// Auto refresh every 2 minutes
-setInterval(() => {
-  cachedData = null;
-  init();
-}, 120000);
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
