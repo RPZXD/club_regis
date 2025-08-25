@@ -10,11 +10,17 @@ class BestActivity
     protected $cache = [];
     protected $cacheExpiry = [];
     protected $cacheTimeout = 300; // 5 minutes
+    protected $autoInit = false; // Add flag to control table initialization
 
-    public function __construct(PDO $pdo)
+    public function __construct(PDO $pdo, $autoInitTables = false)
     {
         $this->pdo = $pdo;
-        $this->initTables();
+        $this->autoInit = $autoInitTables;
+        
+        // Only initialize tables when explicitly requested
+        if ($this->autoInit) {
+            $this->initTables();
+        }
     }
 
     // Enhanced caching system
@@ -51,7 +57,7 @@ class BestActivity
     }
 
     // Ensure required tables exist
-    private function initTables()
+    public function initTables()
     {
         try {
             // Add optimized indexes for better performance
