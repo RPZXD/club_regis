@@ -183,7 +183,11 @@ function render(list, status) {
       language: { search: 'ค้นหา:' },
       pageLength: 15,
       processing: false,
-      deferRender: true
+      deferRender: true,
+      drawCallback: function() {
+        // Re-attach event listeners after each draw/page change
+        attachEventListeners();
+      }
     }); 
   }
   
@@ -249,6 +253,25 @@ function render(list, status) {
   table.rows.add($(tbody).find('tr')).draw(false);
 }
 
+// Function to attach event listeners using event delegation
+function attachEventListeners() {
+  // Remove any existing delegated listeners to prevent duplicates
+  $(document).off('click.bestRegister', '.apply');
+  
+  // Use event delegation to handle clicks on apply buttons
+  $(document).on('click.bestRegister', '.apply', function(e) {
+    e.preventDefault();
+    const button = $(this)[0];
+    
+    if (!button.disabled && !isRegistering) {
+      const activityId = button.getAttribute('data-id');
+      if (activityId) {
+        registerActivity(activityId);
+      }
+    }
+  });
+}
+
 async function registerActivity(id) {
   if (isRegistering) return;
   
@@ -301,14 +324,9 @@ async function init() {
     renderStatus(status);
     render(list.data||[], status);
     
-    // Add event listeners to apply buttons
-    document.querySelectorAll('.apply').forEach(btn=>{
-      btn.addEventListener('click', ()=> {
-        if (!btn.disabled && !isRegistering) {
-          registerActivity(btn.dataset.id);
-        }
-      });
-    });
+    // Event delegation will handle the button clicks automatically
+    // No need to manually attach listeners here anymore
+    
   } catch (error) {
     showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล','error');
   } finally {
@@ -322,7 +340,11 @@ setInterval(() => {
   init();
 }, 120000);
 
-document.addEventListener('DOMContentLoaded', init);
+// Initialize event delegation on page load
+document.addEventListener('DOMContentLoaded', () => {
+  attachEventListeners();
+  init();
+});
 </script>
 <?php require_once('script.php'); ?>
 </body>
