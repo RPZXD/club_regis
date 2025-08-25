@@ -173,7 +173,15 @@ require_once('header.php');
 <?php require_once('script.php');?>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
-let table; let currentActivityId = null; let bestChart = null;
+// Enhanced performance for admin interface
+let table; 
+let currentActivityId = null; 
+let bestChart = null;
+let dataCache = {
+  list: null,
+  lastUpdated: 0,
+  cacheTimeout: 30000 // 30 seconds
+};
 
 function showToast(message, type = 'info') {
     const icon = ['success','error','warning','info','question'].includes(type) ? type : 'info';
@@ -188,55 +196,100 @@ function showToast(message, type = 'info') {
     });
 }
 
-function fetchList() {
-    return fetch('../controllers/BestActivityController.php?action=list').then(r => r.json());
+// Enhanced fetch with caching
+async function fetchList(useCache = true) {
+    if (useCache && dataCache.list && (Date.now() - dataCache.lastUpdated) < dataCache.cacheTimeout) {
+        return dataCache.list;
+    }
+    
+    try {
+        const response = await fetch('../controllers/BestActivityController.php?action=list', {
+            headers: { 'Cache-Control': 'max-age=30' }
+        });
+        const data = await response.json();
+        dataCache.list = data;
+        dataCache.lastUpdated = Date.now();
+        return data;
+    } catch (error) {
+        console.error('Error fetching list:', error);
+        showToast('ไม่สามารถโหลดข้อมูลได้', 'error');
+        return { success: false, data: [] };
+    }
 }
 
+// Optimized render function with batch processing
 function render(list) {
     if (!table) {
         table = $('#best-table').DataTable({
             ordering: true,
             order: [[0,'asc']],
-            language: { search: 'ค้นหา:' }
+            language: { 
+                search: 'ค้นหา:',
+                emptyTable: "ไม่พบข้อมูลกิจกรรม",
+                loadingRecords: "กำลังโหลด...",
+                processing: "กำลังประมวลผล..."
+            },
+            processing: false,
+            deferRender: true, // Optimize rendering
+            pageLength: 25,
+            columnDefs: [
+                { targets: [6, 7], orderable: false } // Disable sorting for action columns
+            ]
         });
     }
+    
     table.clear();
-    list.forEach(a => {
-        const current = parseInt(a.current_members_count||0);
-        const max = parseInt(a.max_members||0);
-        const percent = max > 0 ? Math.round((current/max)*100) : 0;
+    
+    // Batch process all rows
+    const tableData = list.map(a => {
+        const current = parseInt(a.current_members_count || 0);
+        const max = parseInt(a.max_members || 0);
+        const percent = max > 0 ? Math.round((current / max) * 100) : 0;
+        
         let barColor = 'bg-green-400';
         if (percent >= 100) barColor = 'bg-red-500';
         else if (percent >= 70) barColor = 'bg-yellow-400';
+        
         const progress = `
             <div class="w-36 mx-auto">
                 <div class="relative h-5 bg-gray-200 rounded-full overflow-hidden">
-                    <div class="absolute left-0 top-0 h-5 ${barColor}" style="width:${percent}%"></div>
-                    <div class="absolute w-full text-xs text-center top-0 left-0 h-5 leading-5">${current} / ${max}</div>
+                    <div class="absolute left-0 top-0 h-5 ${barColor} transition-all duration-300" style="width:${percent}%"></div>
+                    <div class="absolute w-full text-xs text-center top-0 left-0 h-5 leading-5 font-semibold">${current} / ${max}</div>
                 </div>
             </div>`;
+            
         const printBtn = `
-            <a href="print_best.php?id=${a.id}" target="_blank" class="inline-block px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-                พิมพ์
+            <a href="print_best.php?id=${a.id}" target="_blank" class="inline-block px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                <i class="fas fa-print mr-1"></i>พิมพ์
             </a>`;
+            
         const actions = `
-            <div class="flex gap-2 justify-center">
-                <button class="px-2 py-1 bg-indigo-600 text-white rounded" onclick="openEdit(${a.id})">แก้ไข</button>
-                <button class="px-2 py-1 bg-blue-600 text-white rounded" onclick="openMembers(${a.id})">สมาชิก</button>
-                <button class="px-2 py-1 bg-red-600 text-white rounded" onclick="removeActivity(${a.id})">ลบ</button>
+            <div class="flex gap-1 justify-center">
+                <button class="px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors text-sm" onclick="openEdit(${a.id})">
+                    <i class="fas fa-edit"></i> แก้ไข
+                </button>
+                <button class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm" onclick="openMembers(${a.id})">
+                    <i class="fas fa-users"></i> สมาชิก
+                </button>
+                <button class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm" onclick="removeActivity(${a.id})">
+                    <i class="fas fa-trash"></i> ลบ
+                </button>
             </div>`;
-        table.row.add([
+            
+        return [
             a.id,
-            `<span class=\"font-semibold text-blue-700\">${a.name}</span>`,
-            a.grade_levels,
+            `<span class="font-semibold text-blue-700">${a.name}</span>`,
+            `<span class="px-2 py-1 bg-gray-100 rounded text-sm">${a.grade_levels}</span>`,
             progress,
             a.year,
-            current,
+            `<span class="font-bold ${current > 0 ? 'text-blue-600' : 'text-gray-400'}">${current}</span>`,
             printBtn,
             actions
-        ]);
+        ];
     });
-    table.draw(false);
+
+    // Batch add all rows
+    table.rows.add(tableData).draw(false);
 
     // Update summary and chart
     updateSummary(list);
@@ -343,50 +396,155 @@ function openMembers(id) {
     document.getElementById('members-modal').classList.remove('hidden');
 }
 
-function loadMembers() {
-    fetch(`../controllers/BestActivityController.php?action=members&id=${currentActivityId}`)
-      .then(r=>r.json()).then(d=>{
+// Enhanced member loading with single optimized query
+async function loadMembers() {
+    try {
+        const response = await fetch(`../controllers/BestActivityController.php?action=members&id=${currentActivityId}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            showToast('ไม่สามารถโหลดรายชื่อสมาชิกได้', 'error');
+            return;
+        }
+        
         const body = document.getElementById('members-body');
         body.innerHTML = '';
-        (d.members||[]).forEach(m=>{
-            body.innerHTML += `<tr>
-                <td class=\"p-2 border\">${m.student_id}</td>
-                <td class=\"p-2 border\">${m.name}</td>
-                <td class=\"p-2 border\">${m.class_name}</td>
-                <td class=\"p-2 border\">${m.created_at}</td>
-                <td class=\"p-2 border\"><button class=\"px-2 py-1 bg-red-600 text-white rounded\" onclick=\"removeMember('${m.student_id}')\">ลบ</button></td>
-            </tr>`;
+        
+        // Batch create rows
+        const rows = (data.members || []).map(m => `
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="p-2 border font-mono text-sm">${m.student_id}</td>
+                <td class="p-2 border font-semibold">${m.name}</td>
+                <td class="p-2 border text-center text-sm">${m.class_name}</td>
+                <td class="p-2 border text-center text-xs text-gray-500">${new Date(m.created_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}</td>
+                <td class="p-2 border text-center">
+                    <button class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm" 
+                            onclick="removeMember('${m.student_id}')" 
+                            title="ลบสมาชิก">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`).join('');
+            
+        body.innerHTML = rows;
+        
+        // Update member count display
+        const memberCount = data.members ? data.members.length : 0;
+        document.querySelector('#members-modal h3').innerHTML = `รายชื่อสมาชิก (${memberCount} คน)`;
+        
+    } catch (error) {
+        console.error('Error loading members:', error);
+        showToast('เกิดข้อผิดพลาดในการโหลดรายชื่อสมาชิก', 'error');
+    }
+}
+
+// Enhanced member removal with confirmation
+async function removeMember(student_id) {
+    try {
+        const result = await Swal.fire({
+            title: 'ลบสมาชิก?',
+            text: `ต้องการลบสมาชิก ${student_id} หรือไม่?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'ลบ',
+            cancelButtonText: 'ยกเลิก'
         });
-      });
+        
+        if (!result.isConfirmed) return;
+        
+        const fd = new FormData();
+        fd.append('action', 'remove_member');
+        fd.append('id', currentActivityId);
+        fd.append('student_id', student_id);
+        
+        const response = await fetch('../controllers/BestActivityController.php', { 
+            method: 'POST', 
+            body: fd 
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('ลบสมาชิกสำเร็จ', 'success');
+            await loadMembers();
+            
+            // Clear cache and reload main list
+            dataCache.list = null;
+            await load();
+        } else {
+            showToast(data.message || 'ไม่สามารถลบสมาชิกได้', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error removing member:', error);
+        showToast('เกิดข้อผิดพลาดในการลบสมาชิก', 'error');
+    }
 }
 
-function removeMember(student_id) {
-    const fd = new FormData();
-    fd.append('action','remove_member');
-    fd.append('id', currentActivityId);
-    fd.append('student_id', student_id);
-    fetch('../controllers/BestActivityController.php', { method:'POST', body: fd })
-      .then(r=>r.json()).then(()=> loadMembers());
-}
-
-function addMember() {
+// Enhanced member addition with validation
+async function addMember() {
     const student_id = document.getElementById('member-student-id').value.trim();
-    if (!student_id) return;
-    const fd = new FormData();
-    fd.append('action','add_member');
-    fd.append('id', currentActivityId);
-    fd.append('student_id', student_id);
-    fetch('../controllers/BestActivityController.php', { method:'POST', body: fd })
-      .then(r=>r.json()).then(d=>{
-    if (!d.success) { showToast(d.message||'เพิ่มไม่ได้','error'); } else { showToast('เพิ่มสมาชิกแล้ว','success'); }
-        document.getElementById('member-student-id').value='';
-        loadMembers();
-        load();
-      });
+    if (!student_id) {
+        showToast('กรุณากรอกรหัสนักเรียน', 'warning');
+        return;
+    }
+    
+    try {
+        const fd = new FormData();
+        fd.append('action', 'add_member');
+        fd.append('id', currentActivityId);
+        fd.append('student_id', student_id);
+        
+        const response = await fetch('../controllers/BestActivityController.php', { 
+            method: 'POST', 
+            body: fd 
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('เพิ่มสมาชิกสำเร็จ', 'success');
+            document.getElementById('member-student-id').value = '';
+            await loadMembers();
+            
+            // Clear cache and reload main list
+            dataCache.list = null;
+            await load();
+        } else {
+            showToast(data.message || 'ไม่สามารถเพิ่มสมาชิกได้', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error adding member:', error);
+        showToast('เกิดข้อผิดพลาดในการเพิ่มสมาชิก', 'error');
+    }
 }
 
-function load() {
-    fetchList().then(d=>{ if (d.data) render(d.data); });
+// Enhanced load function with loading state
+async function load() {
+    try {
+        // Show loading state
+        if (table) {
+            table.clear().draw();
+            $('#best-table_processing').show();
+        }
+        
+        const data = await fetchList(false); // Force fresh data
+        
+        if (data.success && data.data) {
+            render(data.data);
+        } else {
+            showToast('ไม่สามารถโหลดข้อมูลได้', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error loading data:', error);
+        showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+    } finally {
+        if (table) {
+            $('#best-table_processing').hide();
+        }
+    }
 }
 
 // events

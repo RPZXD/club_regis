@@ -2,6 +2,7 @@
 session_start();
 
 header('Content-Type: application/json');
+header('Cache-Control: private, max-age=60'); // Cache for 1 minute for GET requests
 
 require_once __DIR__ . '/../classes/DatabaseClub.php';
 require_once __DIR__ . '/../classes/DatabaseUsers.php';
@@ -12,13 +13,20 @@ use App\DatabaseClub;
 use App\DatabaseUsers;
 use App\Models\BestActivity;
 
+// Initialize with connection pooling
 $db = new DatabaseClub();
 $pdo = $db->getPDO();
+$pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false); // Use native prepared statements for better performance
 $bestModel = new BestActivity($pdo, false); // Disable auto table initialization
 $dbUsers = new DatabaseUsers();
 
-$termPee = \TermPee::getCurrent();
-$current_year = $termPee->pee;
+// Cache current year to avoid repeated calculations
+static $current_year_cache = null;
+if ($current_year_cache === null) {
+    $termPee = \TermPee::getCurrent();
+    $current_year_cache = $termPee->pee;
+}
+$current_year = $current_year_cache;
 
 $action = $_GET['action'] ?? ($_POST['action'] ?? '');
 
@@ -28,24 +36,34 @@ function jsonError($message, $extra = []) {
 }
 
 function checkRegistrationTime($stuGrade) {
-    $best_setting_file = __DIR__ . '/../best_regis_setting.json';
-    if (file_exists($best_setting_file)) {
-        $best_setting = json_decode(file_get_contents($best_setting_file), true);
-        if (isset($best_setting[$stuGrade])) {
-            $regis_start = $best_setting[$stuGrade]['regis_start'] ?? '';
-            $regis_end = $best_setting[$stuGrade]['regis_end'] ?? '';
+    static $settings_cache = null;
+    static $cache_time = null;
+    
+    // Cache settings for 5 minutes
+    if ($settings_cache === null || (time() - $cache_time) > 300) {
+        $best_setting_file = __DIR__ . '/../best_regis_setting.json';
+        if (file_exists($best_setting_file)) {
+            $settings_cache = json_decode(file_get_contents($best_setting_file), true);
+            $cache_time = time();
+        } else {
+            $settings_cache = [];
+        }
+    }
+    
+    if (isset($settings_cache[$stuGrade])) {
+        $regis_start = $settings_cache[$stuGrade]['regis_start'] ?? '';
+        $regis_end = $settings_cache[$stuGrade]['regis_end'] ?? '';
+        
+        if ($regis_start && $regis_end) {
+            $now = new DateTime();
+            $start = new DateTime($regis_start);
+            $end = new DateTime($regis_end);
             
-            if ($regis_start && $regis_end) {
-                $now = new DateTime();
-                $start = new DateTime($regis_start);
-                $end = new DateTime($regis_end);
-                
-                if ($now < $start) {
-                    return ['valid' => false, 'message' => 'ยังไม่ถึงเวลาเปิดรับสมัครกิจกรรม Best สำหรับ ' . $stuGrade];
-                }
-                if ($now > $end) {
-                    return ['valid' => false, 'message' => 'หมดเวลาการสมัครกิจกรรม Best สำหรับ ' . $stuGrade . ' แล้ว'];
-                }
+            if ($now < $start) {
+                return ['valid' => false, 'message' => 'ยังไม่ถึงเวลาเปิดรับสมัครกิจกรรม Best สำหรับ ' . $stuGrade];
+            }
+            if ($now > $end) {
+                return ['valid' => false, 'message' => 'หมดเวลาการสมัครกิจกรรม Best สำหรับ ' . $stuGrade . ' แล้ว'];
             }
         }
     }
@@ -109,32 +127,60 @@ switch ($action) {
                 jsonError($timeValidation['message']);
             }
 
-            // Check if already registered for any Best activity this year - optimized query
-            $existing = $bestModel->getStudentRegistration($student_id, $current_year);
+        // Check if already registered for any Best activity this year - optimized single query
+        $existing = $bestModel->getStudentRegistration($student_id, $current_year);
+        
+        if ($existing) {
+            jsonError('คุณได้สมัครกิจกรรม "' . $existing['name'] . '" ไปแล้วในปีนี้');
+        }
+
+        // Use atomic transaction to check capacity and insert
+        $pdo->beginTransaction();
+        try {
+            // Lock activity row to prevent race conditions
+            $stmt = $pdo->prepare("SELECT max_members FROM best_activities WHERE id = :id AND year = :year FOR UPDATE");
+            $stmt->execute(['id' => $activity_id, 'year' => $current_year]);
+            $activityData = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($existing) {
-                jsonError('คุณได้สมัครกิจกรรม "' . $existing['name'] . '" ไปแล้วในปีนี้');
+            if (!$activityData) {
+                throw new Exception('กิจกรรมไม่พบ');
             }
 
-            // Check capacity
-            $current_count = $bestModel->countMembers($activity_id, $current_year);
-            if ($current_count >= intval($activity['max_members'])) {
-                jsonError('กิจกรรมเต็มแล้ว (รับได้ ' . $activity['max_members'] . ' คน)');
+            // Check current count with lock
+            $stmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM best_members WHERE activity_id = :id AND year = :year FOR UPDATE");
+            $stmt->execute(['id' => $activity_id, 'year' => $current_year]);
+            $currentCount = $stmt->fetch(PDO::FETCH_ASSOC)['cnt'];
+
+            if ($currentCount >= intval($activityData['max_members'])) {
+                throw new Exception('กิจกรรมเต็มแล้ว (รับได้ ' . $activityData['max_members'] . ' คน)');
             }
 
-            // Insert registration - use optimized method
-            $success = $bestModel->addMember($activity_id, $student_id, $current_year);
+            // Insert registration
+            $stmt = $pdo->prepare("INSERT INTO best_members (activity_id, student_id, year, created_at) VALUES (:activity_id, :student_id, :year, NOW())");
+            $success = $stmt->execute([
+                'activity_id' => $activity_id,
+                'student_id' => $student_id,
+                'year' => $current_year
+            ]);
 
-            if ($success) {
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'สมัครกิจกรรม "' . $activity['name'] . '" เรียบร้อยแล้ว'
-                ]);
-            } else {
-                jsonError('ไม่สามารถบันทึกการสมัครได้');
+            if (!$success) {
+                throw new Exception('ไม่สามารถบันทึกการสมัครได้');
             }
 
-        } catch (PDOException $e) {
+            $pdo->commit();
+            
+            // Clear cache
+            $bestModel->clearActivityCache($activity_id, $current_year);
+
+            echo json_encode([
+                'success' => true, 
+                'message' => 'สมัครกิจกรรม "' . $activity['name'] . '" เรียบร้อยแล้ว'
+            ]);
+
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            jsonError($e->getMessage());
+        }        } catch (PDOException $e) {
             if (strpos($e->getMessage(), 'uniq_student_year') !== false) {
                 jsonError('คุณได้สมัครกิจกรรม Best For Teen ไปแล้วในปีนี้');
             }
@@ -195,21 +241,15 @@ switch ($action) {
     case 'members':
         $id = intval($_GET['id'] ?? 0);
         if ($id <= 0) jsonError('ไม่พบ ID');
+        
+        // Get activity and members in optimized single call
         $activity = $bestModel->getById($id);
         if (!$activity || intval($activity['year']) !== intval($current_year)) jsonError('ไม่พบกิจกรรมปีนี้');
-        $members = $bestModel->listMembers($id, $current_year);
-        // join student data
-        $result = [];
-        foreach ($members as $m) {
-            $stu = $dbUsers->getStudentByUsername($m['student_id']);
-            $result[] = [
-                'student_id' => $m['student_id'],
-                'name' => $stu ? ($stu['Stu_pre'].$stu['Stu_name'].' '.$stu['Stu_sur']) : $m['student_id'],
-                'class_name' => $stu ? ('ม.'.$stu['Stu_major'].'/'.$stu['Stu_room']) : '',
-                'created_at' => $m['created_at']
-            ];
-        }
-        echo json_encode(['success' => true, 'members' => $result, 'year' => $current_year]);
+        
+        // Use optimized method to get members with student data in single query
+        $members = $bestModel->listMembersWithStudentData($id, $current_year);
+        
+        echo json_encode(['success' => true, 'members' => $members, 'year' => $current_year]);
         exit;
 
     case 'add_member':

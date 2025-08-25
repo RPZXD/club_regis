@@ -150,19 +150,75 @@ require_once('header.php');
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+// Enhanced performance with caching and optimized loading
 let table;
+let dataCache = {
+  status: null,
+  list: null,
+  lastUpdated: 0,
+  cacheTimeout: 30000 // 30 seconds
+};
 
+// Optimized toast function
 function showToast(message, type = 'info') {
   const icon = ['success','error','warning','info','question'].includes(type) ? type : 'info';
-  Swal.fire({ toast: true, position: 'top-end', icon, title: message, showConfirmButton: false, timer: 2000, timerProgressBar: true });
+  Swal.fire({ 
+    toast: true, 
+    position: 'top-end', 
+    icon, 
+    title: message, 
+    showConfirmButton: false, 
+    timer: 2000, 
+    timerProgressBar: true,
+    background: '#f8fafc',
+    color: '#1f2937'
+  });
 }
 
-function loadStatus() {
-  return fetch('../controllers/BestActivityController.php?action=my_status').then(r=>r.json());
+// Enhanced loading with caching
+async function loadStatus(useCache = true) {
+  if (useCache && dataCache.status && (Date.now() - dataCache.lastUpdated) < dataCache.cacheTimeout) {
+    return dataCache.status;
+  }
+  
+  try {
+    const response = await fetch('../controllers/BestActivityController.php?action=my_status', {
+      method: 'GET',
+      headers: {
+        'Cache-Control': 'max-age=30'
+      }
+    });
+    const data = await response.json();
+    dataCache.status = data;
+    return data;
+  } catch (error) {
+    console.error('Error loading status:', error);
+    showToast('ไม่สามารถโหลดสถานะได้', 'error');
+    return { success: false, registered: false };
+  }
 }
 
-function loadList() {
-  return fetch('../controllers/BestActivityController.php?action=list').then(r=>r.json());
+async function loadList(useCache = true) {
+  if (useCache && dataCache.list && (Date.now() - dataCache.lastUpdated) < dataCache.cacheTimeout) {
+    return dataCache.list;
+  }
+  
+  try {
+    const response = await fetch('../controllers/BestActivityController.php?action=list', {
+      method: 'GET',
+      headers: {
+        'Cache-Control': 'max-age=30'
+      }
+    });
+    const data = await response.json();
+    dataCache.list = data;
+    dataCache.lastUpdated = Date.now();
+    return data;
+  } catch (error) {
+    console.error('Error loading list:', error);
+    showToast('ไม่สามารถโหลดรายการกิจกรรมได้', 'error');
+    return { success: false, data: [] };
+  }
 }
 
 function renderStatus(data) {
@@ -196,10 +252,14 @@ function renderStatus(data) {
   }
 }
 
+// Optimized render function with better performance
 function render(list, status) {
-  if (!table) { 
-    table = $('#best-table').DataTable({ 
-      language: { 
+  const registrationOpen = <?php echo $registration_open ? 'true' : 'false'; ?>;
+  
+  // Initialize DataTable only once with optimized settings
+  if (!table) {
+    table = $('#best-table').DataTable({
+      language: {
         search: '<i class="fas fa-search mr-2"></i>ค้นหา:',
         lengthMenu: "แสดง _MENU_ รายการ",
         info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
@@ -208,34 +268,39 @@ function render(list, status) {
           last: "หน้าสุดท้าย",
           next: "ถัดไป",
           previous: "ก่อนหน้า"
-        }
+        },
+        emptyTable: "ไม่พบข้อมูลกิจกรรม",
+        loadingRecords: "กำลังโหลด...",
+        processing: "กำลังประมวลผล..."
       },
       ordering: false,
       paging: true,
       pageLength: 10,
       info: true,
+      processing: false,
+      deferRender: true, // Optimize rendering for large datasets
       dom: '<"flex flex-col md:flex-row justify-between items-center mb-4"<"mb-2 md:mb-0"l><"mb-2 md:mb-0"f>>rtip',
       drawCallback: function() {
         // Add hover effects to table rows
         $('#best-table tbody tr').addClass('hover:bg-blue-50 transition-colors duration-200');
       }
-    }); 
+    });
   }
+
+  // Clear and batch update table data
   table.clear();
   
-  const registrationOpen = <?php echo $registration_open ? 'true' : 'false'; ?>;
-  
-  list.forEach((a, index) => {
-    const current = parseInt(a.current_members_count||0);
-    const max = parseInt(a.max_members||0);
-    const percent = max>0 ? Math.round((current/max)*100) : 0;
-    const grades = (a.grade_levels||'');
-    const disabled = percent>=100 || status.registered || !registrationOpen;
-    
+  const tableData = list.map((a, index) => {
+    const current = parseInt(a.current_members_count || 0);
+    const max = parseInt(a.max_members || 0);
+    const percent = max > 0 ? Math.round((current / max) * 100) : 0;
+    const grades = (a.grade_levels || '');
+    const disabled = percent >= 100 || status.registered || !registrationOpen;
+
     let buttonText = 'สมัคร';
     let buttonClass = 'apply px-6 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 shadow-lg';
     let buttonIcon = 'fas fa-hand-point-up';
-    
+
     if (!registrationOpen) {
       buttonText = 'ปิดรับสมัคร';
       buttonClass += ' bg-gray-400 text-white cursor-not-allowed';
@@ -251,8 +316,8 @@ function render(list, status) {
     } else {
       buttonClass += ' bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 hover:shadow-xl';
     }
-    
-    // Progress bar with enhanced design
+
+    // Enhanced progress bar
     const progressBarColor = percent >= 100 ? 'bg-red-500' : percent >= 70 ? 'bg-yellow-500' : 'bg-green-500';
     const progressBar = `
       <div class="w-full max-w-xs mx-auto">
@@ -261,33 +326,34 @@ function render(list, status) {
           <span class="text-sm font-medium text-gray-700">${percent}%</span>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-3 shadow-inner">
-          <div class="${progressBarColor} h-3 rounded-full transition-all duration-500 ease-out shadow-sm" 
+          <div class="${progressBarColor} h-3 rounded-full transition-all duration-500 ease-out shadow-sm progress-animate" 
                style="width: ${percent}%"></div>
         </div>
       </div>`;
-    
-    const buttonHtml = disabled ? 
+
+    const buttonHtml = disabled ?
       `<button class="${buttonClass}" disabled>
         <i class="${buttonIcon} mr-2"></i>${buttonText}
        </button>` :
       `<button class="${buttonClass}" data-id="${a.id}">
         <i class="${buttonIcon} mr-2"></i>${buttonText}
        </button>`;
-    
-    // Enhanced table row with better styling
-    table.row.add([
+
+    return [
       `<span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full font-bold">${a.id}</span>`,
       `<div class="font-semibold text-gray-800 hover:text-blue-600 transition-colors duration-200">
-        <i class="fas fa-star text-yellow-500 mr-2"></i>${a.name || ''
-       }</div>`,
+        <i class="fas fa-star text-yellow-500 mr-2"></i>${a.name || ''}
+       </div>`,
       `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
         ${grades}
        </span>`,
       progressBar,
       `<div class="text-center">${buttonHtml}</div>`
-    ]);
+    ];
   });
-  table.draw(false);
+
+  // Batch add all rows
+  table.rows.add(tableData).draw(false);
 }
 
 function registerActivity(id) {
@@ -343,9 +409,31 @@ function registerActivity(id) {
 }
 
 function init() {
-  Promise.all([loadStatus(), loadList()]).then(([status, list])=>{
-    renderStatus(status);
-    render(list.data||[], status);
+  // Show loading state
+  const statusBox = document.getElementById('status-box');
+  statusBox.innerHTML = `
+    <div class="flex items-center justify-center p-6 rounded-2xl bg-gray-100">
+      <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mr-4"></div>
+      <span class="text-gray-600">กำลังโหลดข้อมูล...</span>
+    </div>`;
+
+  // Parallel loading for better performance
+  Promise.all([loadStatus(false), loadList(false)]).then(([status, list]) => {
+    if (status.success && list.success) {
+      renderStatus(status);
+      render(list.data || [], status);
+    } else {
+      statusBox.innerHTML = `
+        <div class="p-6 rounded-2xl bg-red-100 border-2 border-red-300">
+          <div class="text-red-700 text-center">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณารีเฟรชหน้าเว็บ
+          </div>
+        </div>`;
+    }
+  }).catch(error => {
+    console.error('Init error:', error);
+    showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
   });
 }
 
