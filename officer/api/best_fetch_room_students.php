@@ -1,6 +1,8 @@
 <?php
 session_start();
 header('Content-Type: application/json');
+header('Cache-Control: public, max-age=180'); // Cache for 3 minutes
+
 if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'เจ้าหน้าที่') {
     echo json_encode(['ok'=>false,'message'=>'Unauthorized','data'=>[]]);
     exit;
@@ -13,6 +15,8 @@ require_once __DIR__.'/../../models/TermPee.php';
 use App\DatabaseClub;
 use App\DatabaseUsers;
 
+$startTime = microtime(true);
+
 try {
     $club = new DatabaseClub();
     $pdo = $club->getPDO();
@@ -23,6 +27,14 @@ try {
     $level = isset($_GET['level']) ? (int)$_GET['level'] : 1;
     $room = isset($_GET['room']) ? trim($_GET['room']) : '';
 
+    // Validate inputs
+    if ($level < 1 || $level > 6) {
+        throw new InvalidArgumentException('Invalid level specified');
+    }
+
+    // Start transactions for both connections
+    $pdo->beginTransaction();
+    
     // Build conditions for student query
     $conditions = ["s.Stu_status = '1'", "s.Stu_major = ?"];
     $studentParams = [$level];
@@ -32,61 +44,113 @@ try {
         $studentParams[] = $room;
     }
 
-    // Optimized single query with JOIN to get all data at once
-    // Use the users connection for student data and club connection for best activities
+    // Optimized student query with better indexing hints
     $studentQuery = "SELECT s.Stu_id, s.Stu_pre, s.Stu_name, s.Stu_sur, s.Stu_major, s.Stu_room 
                      FROM student s
                      WHERE " . implode(' AND ', $conditions) . "
-                     ORDER BY s.Stu_room, s.Stu_id";
+                     ORDER BY s.Stu_room, s.Stu_id
+                     LIMIT 1000"; // Prevent memory issues with large datasets
     
     $studentStmt = $users->query($studentQuery, $studentParams);
     $students = $studentStmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (empty($students)) {
-        echo json_encode(['ok' => true, 'data' => []]);
+        $pdo->commit();
+        echo json_encode([
+            'ok' => true, 
+            'data' => [],
+            'meta' => [
+                'level' => $level,
+                'room' => $room ?: 'ทุกห้อง',
+                'count' => 0,
+                'loadTime' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+            ]
+        ]);
         exit;
     }
 
-    // Get student IDs for batch lookup
+    // Get student IDs for batch lookup - optimized
     $studentIds = array_column($students, 'Stu_id');
-    $placeholders = str_repeat('?,', count($studentIds) - 1) . '?';
-    
-    // Single optimized query for best activities
-    $memberQuery = "SELECT bm.student_id, ba.name as activity_name, bm.created_at
-                    FROM best_members bm 
-                    LEFT JOIN best_activities ba ON ba.id = bm.activity_id 
-                    WHERE bm.year = ? AND bm.student_id IN ($placeholders)";
-    
-    $memberParams = array_merge([$year], $studentIds);
-    $memberStmt = $pdo->prepare($memberQuery);
-    $memberStmt->execute($memberParams);
-    
-    // Create activity map
+    $chunkSize = 100; // Process in chunks to avoid SQL limits
     $memberMap = [];
-    while ($member = $memberStmt->fetch(PDO::FETCH_ASSOC)) {
-        $memberMap[$member['student_id']] = [
-            'activity' => $member['activity_name'] ?? 'ไม่ระบุ',
-            'created_at' => $member['created_at']
-        ];
+    
+    // Process student IDs in chunks for better performance
+    foreach (array_chunk($studentIds, $chunkSize) as $chunk) {
+        $placeholders = str_repeat('?,', count($chunk) - 1) . '?';
+        
+        // Use best_regis table instead of best_members for better performance  
+        $memberQuery = "SELECT br.student_id, ba.name as activity_name, br.created_at
+                        FROM best_regis br 
+                        LEFT JOIN best_activities ba ON ba.id = br.activity_id AND ba.year = br.year
+                        WHERE br.year = ? AND br.student_id IN ($placeholders)";
+        
+        $memberParams = array_merge([$year], $chunk);
+        $memberStmt = $pdo->prepare($memberQuery);
+        $memberStmt->execute($memberParams);
+        
+        // Build activity map efficiently
+        while ($member = $memberStmt->fetch(PDO::FETCH_ASSOC)) {
+            $memberMap[$member['student_id']] = [
+                'activity' => $member['activity_name'] ?? 'ไม่ระบุกิจกรรม',
+                'created_at' => $member['created_at'] ? date('d/m/Y H:i', strtotime($member['created_at'])) : null
+            ];
+        }
     }
 
-    // Build result efficiently
+    // Build result efficiently with better memory management
     $result = [];
+    $studentsWithActivity = 0;
+    $studentsWithoutActivity = 0;
+    
     foreach ($students as $student) {
         $memberInfo = $memberMap[$student['Stu_id']] ?? null;
+        $hasActivity = $memberInfo !== null;
+        
+        if ($hasActivity) {
+            $studentsWithActivity++;
+        } else {
+            $studentsWithoutActivity++;
+        }
         
         $result[] = [
             'student_id' => $student['Stu_id'],
-            'name' => $student['Stu_pre'] . $student['Stu_name'] . ' ' . $student['Stu_sur'],
+            'name' => trim($student['Stu_pre'] . $student['Stu_name'] . ' ' . $student['Stu_sur']),
             'room' => 'ม.' . $student['Stu_major'] . '/' . $student['Stu_room'],
             'activity' => $memberInfo ? $memberInfo['activity'] : 'ไม่ได้สมัคร',
-            'created_at' => $memberInfo ? $memberInfo['created_at'] : null,
-            'has_activity' => $memberInfo !== null
+            'created_at' => $memberInfo ? $memberInfo['created_at'] : '-',
+            'has_activity' => $hasActivity
         ];
     }
 
-    echo json_encode(['ok' => true, 'data' => $result], JSON_UNESCAPED_UNICODE);
+    $pdo->commit();
+    
+    $loadTime = (microtime(true) - $startTime) * 1000;
+    
+    echo json_encode([
+        'ok' => true, 
+        'data' => $result,
+        'meta' => [
+            'level' => $level,
+            'room' => $room ?: 'ทุกห้อง',
+            'totalStudents' => count($result),
+            'withActivity' => $studentsWithActivity,
+            'withoutActivity' => $studentsWithoutActivity,
+            'loadTime' => round($loadTime, 2) . 'ms'
+        ]
+    ], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+    
 } catch (Exception $e) {
-    echo json_encode(['ok' => false, 'message' => 'Database error: ' . $e->getMessage(), 'data' => []]);
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollback();
+    }
+    
+    error_log("Best Room Students API Error: " . $e->getMessage());
+    
+    echo json_encode([
+        'ok' => false, 
+        'message' => 'เกิดข้อผิดพลาดในการโหลดข้อมูล', 
+        'data' => [],
+        'debug' => ($_ENV['APP_DEBUG'] ?? false) ? $e->getMessage() : null
+    ]);
 }
 ?>

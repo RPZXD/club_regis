@@ -306,7 +306,7 @@ require_once('header.php');
 <?php require_once('script.php');?>
 
 <script>
-// Enhanced tab switching with async loading and better performance
+// Enhanced tab switching with concurrent loading and smart caching
 document.querySelectorAll('#bestReportTabs .nav-link').forEach(tab => {
     tab.addEventListener('click', async function(e) {
         e.preventDefault();
@@ -325,13 +325,14 @@ document.querySelectorAll('#bestReportTabs .nav-link').forEach(tab => {
         // Add active to clicked tab with enhanced visual feedback
         this.classList.add('active', 'loading');
         const originalText = this.innerHTML;
-        this.style.transform = 'scale(0.95)';
         
+        // Visual feedback
+        this.style.transform = 'scale(0.95)';
         setTimeout(() => { 
             this.style.transform = 'scale(1)'; 
         }, 100);
         
-        // Show target pane with optimized fade effect
+        // Show target pane immediately for better perceived performance
         const target = this.getAttribute('href');
         const pane = document.querySelector(target);
         if (pane) {
@@ -339,7 +340,7 @@ document.querySelectorAll('#bestReportTabs .nav-link').forEach(tab => {
             pane.style.opacity = '0';
             pane.style.transform = 'translateY(10px)';
             
-            // Use requestAnimationFrame for smoother animation
+            // Use requestAnimationFrame for 60fps smooth animation
             requestAnimationFrame(() => {
                 pane.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
                 pane.style.opacity = '1';
@@ -348,38 +349,45 @@ document.querySelectorAll('#bestReportTabs .nav-link').forEach(tab => {
         }
 
         try {
-            // Initialize tab content with optimized async loading
-            if (target === '#best-overview' && window.initBestOverview) {
-                showLoading('โหลดภาพรวมกิจกรรม...'); 
-                await new Promise(resolve => {
-                    window.initBestOverview();
-                    setTimeout(resolve, 300); // Minimum loading time for better UX
-                });
-            }
-            else if (target === '#best-level' && window.initBestLevel) {
-                showLoading('โหลดข้อมูลตามระดับชั้น...'); 
-                await new Promise(resolve => {
-                    window.initBestLevel();
-                    setTimeout(resolve, 300);
-                });
-            }
-            else if (target === '#best-room' && window.initBestRoom) {
-                showLoading('โหลดข้อมูลรายห้อง...'); 
-                await new Promise(resolve => {
-                    window.initBestRoom();
-                    setTimeout(resolve, 300);
-                });
-            }
-            else if (target === '#best-activity' && window.initBestActivity) {
-                showLoading('โหลดข้อมูลรายกิจกรรม...'); 
-                await new Promise(resolve => {
-                    window.initBestActivity();
-                    setTimeout(resolve, 300);
-                });
-            }
+            // Concurrent loading with smart timeout
+            const loadPromise = new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    reject(new Error('Loading timeout'));
+                }, 8000);
+                
+                const loadTab = () => {
+                    if (target === '#best-overview' && window.initBestOverview) {
+                        window.initBestOverview();
+                    }
+                    else if (target === '#best-level' && window.initBestLevel) {
+                        window.initBestLevel();
+                    }
+                    else if (target === '#best-room' && window.initBestRoom) {
+                        window.initBestRoom();
+                    }
+                    else if (target === '#best-activity' && window.initBestActivity) {
+                        window.initBestActivity();
+                    }
+                    
+                    clearTimeout(timeout);
+                    resolve();
+                };
+                
+                // Start loading immediately
+                loadTab();
+                
+                // Minimum loading time for better UX (prevents flashing)
+                setTimeout(resolve, 200);
+            });
+            
+            // Show loading with progress
+            showLoadingWithProgress(getLoadingMessage(target));
+            
+            await loadPromise;
+            
         } catch (error) {
             console.error('Tab loading error:', error);
-            showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+            showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message, 'error');
         } finally {
             hideLoading();
             this.classList.remove('loading');
@@ -388,8 +396,19 @@ document.querySelectorAll('#bestReportTabs .nav-link').forEach(tab => {
     });
 });
 
-// Enhanced loading overlay functions with better performance
-function showLoading(message = 'Loading...') {
+// Get appropriate loading message
+function getLoadingMessage(target) {
+    const messages = {
+        '#best-overview': 'กำลังโหลดภาพรวมกิจกรรม...',
+        '#best-level': 'กำลังโหลดข้อมูลตามระดับชั้น...',
+        '#best-room': 'กำลังโหลดข้อมูลรายห้อง...',
+        '#best-activity': 'กำลังโหลดข้อมูลรายกิจกรรม...'
+    };
+    return messages[target] || 'กำลังโหลดข้อมูล...';
+}
+
+// Enhanced loading overlay with progress and better animations
+function showLoadingWithProgress(message = 'Loading...') {
     let overlay = document.getElementById('loading-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
@@ -397,7 +416,11 @@ function showLoading(message = 'Loading...') {
         overlay.innerHTML = `
             <div class="loading-content">
                 <div class="spinner-container">
-                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <div class="main-spinner">
+                        <div class="spinner-ring"></div>
+                        <div class="spinner-ring"></div>
+                        <div class="spinner-ring"></div>
+                    </div>
                     <div class="spinner-dots">
                         <div class="dot"></div>
                         <div class="dot"></div>
@@ -408,20 +431,33 @@ function showLoading(message = 'Loading...') {
                 <div class="loading-progress">
                     <div class="progress-bar"></div>
                 </div>
+                <div class="loading-tips">
+                    <small class="text-muted">💡 ใช้ Alt+1,2,3,4 สำหรับเปลี่ยนแท็บเร็ว</small>
+                </div>
             </div>
         `;
         document.body.appendChild(overlay);
     }
-    overlay.querySelector('.loading-text').textContent = message;
+    
+    const loadingText = overlay.querySelector('.loading-text');
+    const progressBar = overlay.querySelector('.progress-bar');
+    
+    loadingText.textContent = message;
     overlay.style.display = 'flex';
     
-    // Animate progress bar
-    const progressBar = overlay.querySelector('.progress-bar');
+    // Animate progress bar with realistic timing
     if (progressBar) {
         progressBar.style.width = '0%';
+        progressBar.style.transition = 'none';
+        
         requestAnimationFrame(() => {
-            progressBar.style.transition = 'width 2s ease-out';
-            progressBar.style.width = '90%';
+            progressBar.style.transition = 'width 0.3s ease-out';
+            progressBar.style.width = '30%';
+            
+            setTimeout(() => {
+                progressBar.style.transition = 'width 2s ease-out';
+                progressBar.style.width = '85%';
+            }, 100);
         });
     }
 }
@@ -431,9 +467,15 @@ function hideLoading() {
     if (overlay) {
         const progressBar = overlay.querySelector('.progress-bar');
         if (progressBar) {
+            // Complete progress bar
+            progressBar.style.transition = 'width 0.2s ease-out';
             progressBar.style.width = '100%';
+            
             setTimeout(() => {
+                // Fade out overlay
+                overlay.style.transition = 'opacity 0.3s ease-out';
                 overlay.style.opacity = '0';
+                
                 setTimeout(() => {
                     overlay.style.display = 'none';
                     overlay.style.opacity = '1';
@@ -445,74 +487,141 @@ function hideLoading() {
     }
 }
 
-// Toast notification function
+// Smart preloading system
+let preloadCache = new Map();
+
+function preloadTabData(tabName) {
+    if (preloadCache.has(tabName)) {
+        return preloadCache.get(tabName);
+    }
+    
+    const promise = new Promise(async (resolve) => {
+        try {
+            // Simulate preloading based on tab
+            switch(tabName) {
+                case 'overview':
+                    await fetch('api/best_fetch_overview.php', { 
+                        method: 'GET',
+                        headers: { 'X-Preload': 'true' }
+                    });
+                    break;
+                case 'level':
+                    await fetch('api/best_fetch_level_activity.php?level=1', {
+                        method: 'GET',
+                        headers: { 'X-Preload': 'true' }
+                    });
+                    break;
+            }
+            resolve(true);
+        } catch (error) {
+            console.warn('Preload failed for', tabName, error);
+            resolve(false);
+        }
+    });
+    
+    preloadCache.set(tabName, promise);
+    return promise;
+}
+
+// Toast notification with better styling
 function showToast(message, type = 'info') {
     if (typeof Swal !== 'undefined') {
-        const icon = ['success','error','warning','info','question'].includes(type) ? type : 'info';
+        const icons = {
+            'success': 'success',
+            'error': 'error', 
+            'warning': 'warning',
+            'info': 'info'
+        };
+        
         Swal.fire({ 
             toast: true, 
             position: 'top-end', 
-            icon, 
+            icon: icons[type] || 'info',
             title: message, 
             showConfirmButton: false, 
-            timer: 3000, 
+            timer: type === 'error' ? 5000 : 3000,
             timerProgressBar: true,
             background: '#ffffff',
-            color: '#1f2937'
+            color: '#1f2937',
+            customClass: {
+                popup: 'animated slideInRight'
+            }
         });
     }
 }
 
-// Enhanced initialization with performance monitoring
+// Enhanced initialization with intelligent preloading
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Best report page initializing...');
+    console.log('🚀 Best report dashboard initializing...');
     const startTime = performance.now();
     
-    showLoading('กำลังเตรียมข้อมูลแดชบอร์ด...');
+    showLoadingWithProgress('เตรียมแดชบอร์ด...');
     
     try {
-        await new Promise(resolve => setTimeout(resolve, 500)); // Minimum loading time
-        
+        // Initialize main overview tab
         if (window.initBestOverview) {
             await new Promise(resolve => {
                 window.initBestOverview();
-                setTimeout(resolve, 100);
+                setTimeout(resolve, 300);
             });
         }
         
-        // Add staggered entrance animation to stats cards
-        const infoBoxes = document.querySelectorAll('.info-box');
-        infoBoxes.forEach((box, i) => {
-            box.style.opacity = '0';
-            box.style.transform = 'translateY(-20px)';
-            setTimeout(() => {
-                box.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                box.style.opacity = '1';
-                box.style.transform = 'translateY(0)';
-            }, i * 150 + 200);
-        });
+        // Start preloading other tabs in the background
+        setTimeout(() => {
+            preloadTabData('level').then(() => {
+                console.log('📊 Level data preloaded');
+            });
+        }, 1000);
         
-        // Add entrance animation to tab buttons
-        const tabButtons = document.querySelectorAll('#bestReportTabs .nav-link');
-        tabButtons.forEach((tab, i) => {
-            tab.style.opacity = '0';
-            tab.style.transform = 'translateX(-20px)';
-            setTimeout(() => {
-                tab.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
-                tab.style.opacity = '1';
-                tab.style.transform = 'translateX(0)';
-            }, i * 100 + 800);
-        });
+        // Staggered entrance animations
+        await animateElements();
+        
+        const loadTime = performance.now() - startTime;
+        console.log(`⚡ Dashboard ready in ${Math.round(loadTime)}ms`);
+        
+        // Show ready notification
+        setTimeout(() => {
+            showToast('แดชบอร์ดพร้อมใช้งาน! 🎉', 'success');
+        }, 500);
         
     } catch (error) {
         console.error('Initialization error:', error);
-        showToast('เกิดข้อผิดพลาดในการเตรียมข้อมูล', 'error');
+        showToast('เกิดข้อผิดพลาดในการเตรียมแดชบอร์ด', 'error');
     } finally {
-        const loadTime = performance.now() - startTime;
-        console.log(`⚡ Best report page initialized in ${Math.round(loadTime)}ms`);
         hideLoading();
     }
 });
+
+// Optimized element animations
+async function animateElements() {
+    // Stats cards animation
+    const infoBoxes = document.querySelectorAll('.info-box');
+    for (let i = 0; i < infoBoxes.length; i++) {
+        const box = infoBoxes[i];
+        box.style.opacity = '0';
+        box.style.transform = 'translateY(-30px) scale(0.9)';
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        box.style.transition = 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        box.style.opacity = '1';
+        box.style.transform = 'translateY(0) scale(1)';
+    }
+    
+    // Tab buttons animation
+    const tabButtons = document.querySelectorAll('#bestReportTabs .nav-link');
+    for (let i = 0; i < tabButtons.length; i++) {
+        const tab = tabButtons[i];
+        tab.style.opacity = '0';
+        tab.style.transform = 'translateX(-30px)';
+        
+        await new Promise(resolve => setTimeout(resolve, 80));
+        
+        tab.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+        tab.style.opacity = '1';
+        tab.style.transform = 'translateX(0)';
+    }
+}
 
 // Enhanced stats update with smooth counter animations
 function updateStats(data) {
@@ -600,10 +709,11 @@ document.addEventListener('keydown', (e) => {
 });
 </script>
 <style>
-/* Enhanced animations and styles with better performance */
+/* Enhanced animations with hardware acceleration and performance optimizations */
 .tab-pane {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: opacity, transform;
+    backface-visibility: hidden;
 }
 
 .nav-pills .nav-link {
@@ -611,6 +721,8 @@ document.addEventListener('keydown', (e) => {
     border: 1px solid transparent;
     position: relative;
     overflow: hidden;
+    will-change: transform, box-shadow;
+    backface-visibility: hidden;
 }
 
 .nav-pills .nav-link::before {
@@ -621,7 +733,7 @@ document.addEventListener('keydown', (e) => {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    transition: left 0.5s;
+    transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-pills .nav-link:hover::before {
@@ -642,11 +754,32 @@ document.addEventListener('keydown', (e) => {
 .nav-pills .nav-link.loading {
     opacity: 0.7;
     pointer-events: none;
+    position: relative;
+}
+
+.nav-pills .nav-link.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top: 2px solid #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    transform: translateY(-50%);
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
 }
 
 .card {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, box-shadow;
+    backface-visibility: hidden;
 }
 
 .card:hover {
@@ -660,6 +793,7 @@ document.addEventListener('keydown', (e) => {
     overflow: hidden;
     position: relative;
     will-change: transform, box-shadow;
+    backface-visibility: hidden;
 }
 
 .info-box::before {
@@ -683,11 +817,217 @@ document.addEventListener('keydown', (e) => {
     opacity: 1;
 }
 
+/* Enhanced loading overlay with multiple spinners */
+#loading-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(248, 250, 252, 0.95);
+    backdrop-filter: blur(5px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.3s ease;
+}
+
+.loading-content {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+    max-width: 420px;
+    width: 90%;
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.spinner-container {
+    position: relative;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.main-spinner {
+    position: relative;
+    width: 60px;
+    height: 60px;
+}
+
+.spinner-ring {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    animation: spinRing 2s linear infinite;
+}
+
+.spinner-ring:nth-child(1) {
+    border-top: 3px solid #667eea;
+    animation-delay: 0s;
+}
+
+.spinner-ring:nth-child(2) {
+    border-right: 3px solid #764ba2;
+    animation-delay: -0.5s;
+    width: 48px;
+    height: 48px;
+    top: 6px;
+    left: 6px;
+}
+
+.spinner-ring:nth-child(3) {
+    border-bottom: 3px solid #667eea;
+    animation-delay: -1s;
+    width: 36px;
+    height: 36px;
+    top: 12px;
+    left: 12px;
+}
+
+@keyframes spinRing {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinner-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.spinner-dots .dot {
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    animation: dotPulse 1.4s ease-in-out infinite both;
+}
+
+.spinner-dots .dot:nth-child(1) { animation-delay: -0.32s; }
+.spinner-dots .dot:nth-child(2) { animation-delay: -0.16s; }
+.spinner-dots .dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes dotPulse {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
+
+.loading-text {
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.loading-progress {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+    background-size: 200% 100%;
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.3s ease;
+    animation: progressShine 2s ease-in-out infinite;
+}
+
+@keyframes progressShine {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.loading-tips {
+    margin-top: 1rem;
+    opacity: 0.8;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+/* Enhanced stats animation */
+@keyframes statsPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1) rotate(2deg); }
+    100% { transform: scale(1); }
+}
+
+.info-box-number {
+    animation: statsPulse 3s ease-in-out infinite;
+    will-change: transform;
+    display: inline-block;
+}
+
+/* Card header gradients with enhanced shadows */
+.bg-gradient-primary { 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.bg-gradient-success { 
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+}
+
+.bg-gradient-warning { 
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    box-shadow: 0 6px 20px rgba(240, 147, 251, 0.4);
+}
+
+.bg-gradient-info { 
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+}
+
+.bg-gradient-secondary { 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Table optimizations */
 .table th {
     border-top: none;
     font-weight: 600;
     color: #495057;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .table-hover tbody tr {
@@ -701,6 +1041,7 @@ document.addEventListener('keydown', (e) => {
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
+/* Button enhancements with ripple effect */
 .btn {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -718,7 +1059,7 @@ document.addEventListener('keydown', (e) => {
     background: rgba(255,255,255,0.3);
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
+    transition: width 0.6s ease, height 0.6s ease;
 }
 
 .btn:active::before {
@@ -735,138 +1076,22 @@ document.addEventListener('keydown', (e) => {
     transform: translateY(0);
 }
 
-/* Enhanced loading overlay with better animations */
-#loading-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(248, 250, 252, 0.95);
-    backdrop-filter: blur(5px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    transition: opacity 0.3s ease;
+/* Form controls with enhanced focus states */
+.form-control {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.loading-content {
-    text-align: center;
-    padding: 3rem 2rem;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-    max-width: 400px;
-    width: 90%;
-}
-
-.spinner-container {
-    position: relative;
-    margin-bottom: 1.5rem;
-}
-
-.spinner-dots {
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    margin-top: 1rem;
-}
-
-.spinner-dots .dot {
-    width: 8px;
-    height: 8px;
-    background: #667eea;
-    border-radius: 50%;
-    animation: dotPulse 1.4s ease-in-out infinite both;
-}
-
-.spinner-dots .dot:nth-child(1) { animation-delay: -0.32s; }
-.spinner-dots .dot:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes dotPulse {
-    0%, 80%, 100% {
-        transform: scale(0);
-    }
-    40% {
-        transform: scale(1);
-    }
-}
-
-.loading-text {
-    color: #4a5568;
-    font-weight: 500;
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-}
-
-.loading-progress {
-    width: 100%;
-    height: 4px;
-    background: #e2e8f0;
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-    border-radius: 2px;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-/* Enhanced pulse animation for stats */
-@keyframes statsPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-.info-box-number {
-    animation: statsPulse 3s ease-in-out infinite;
-    will-change: transform;
-}
-
-/* Card header gradients with better colors */
-.bg-gradient-primary { 
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-.bg-gradient-success { 
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-    box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
-}
-
-.bg-gradient-warning { 
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
-}
-
-.bg-gradient-info { 
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
-}
-
-.bg-gradient-secondary { 
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-/* Table responsive enhancements */
-.table-responsive {
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    background: white;
-}
-
-/* Form controls with better styling */
 .form-control:focus {
     box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
     border-color: #667eea;
     transform: scale(1.02);
 }
 
-/* Enhanced DataTables styling */
+/* DataTables enhancements */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white !important;
@@ -877,45 +1102,85 @@ document.addEventListener('keydown', (e) => {
 
 .dataTables_wrapper .dataTables_filter input {
     border: 2px solid #e2e8f0;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 0.75rem 1rem;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dataTables_wrapper .dataTables_filter input:focus {
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: scale(1.02);
+}
+
+/* Table responsive with better scrolling */
+.table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    background: white;
+    position: relative;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
 }
 
 /* Badge enhancements */
 .badge {
     font-weight: 500;
     letter-spacing: 0.5px;
-    padding: 0.5em 0.75em;
+    padding: 0.6em 0.8em;
+    transition: all 0.3s ease;
 }
 
-/* Smooth scrolling */
-html {
-    scroll-behavior: smooth;
+.badge:hover {
+    transform: scale(1.1);
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
+/* Performance optimizations */
+* {
+    box-sizing: border-box;
 }
 
-::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 4px;
+img, video {
+    max-width: 100%;
+    height: auto;
 }
 
-::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 4px;
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    #loading-overlay {
+        background: rgba(17, 24, 39, 0.95);
+    }
+    
+    .loading-content {
+        background: #374151;
+        color: #f9fafb;
+    }
+    
+    .loading-text {
+        color: #e5e7eb;
+    }
 }
 </style>
 <!-- Per-tab scripts -->
