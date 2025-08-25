@@ -175,25 +175,43 @@ function showToast(message, type = 'info') {
   });
 }
 
-// Enhanced loading with caching
+// Enhanced loading with better timeout and error handling
 async function loadStatus(useCache = true) {
   if (useCache && dataCache.status && (Date.now() - dataCache.lastUpdated) < dataCache.cacheTimeout) {
     return dataCache.status;
   }
   
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
     const response = await fetch('../controllers/BestActivityController.php?action=my_status', {
       method: 'GET',
       headers: {
-        'Cache-Control': 'max-age=30'
-      }
+        'Cache-Control': 'max-age=30',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
     dataCache.status = data;
     return data;
   } catch (error) {
     console.error('Error loading status:', error);
-    showToast('ไม่สามารถโหลดสถานะได้', 'error');
+    
+    // Return cached data if available during error
+    if (dataCache.status) {
+      console.warn('Using cached status data due to error');
+      return dataCache.status;
+    }
+    
     return { success: false, registered: false };
   }
 }
@@ -204,19 +222,37 @@ async function loadList(useCache = true) {
   }
   
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
     const response = await fetch('../controllers/BestActivityController.php?action=list', {
       method: 'GET',
       headers: {
-        'Cache-Control': 'max-age=30'
-      }
+        'Cache-Control': 'max-age=30',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
     dataCache.list = data;
     dataCache.lastUpdated = Date.now();
     return data;
   } catch (error) {
     console.error('Error loading list:', error);
-    showToast('ไม่สามารถโหลดรายการกิจกรรมได้', 'error');
+    
+    // Return cached data if available during error
+    if (dataCache.list) {
+      console.warn('Using cached list data due to error');
+      return dataCache.list;
+    }
+    
     return { success: false, data: [] };
   }
 }
@@ -356,94 +392,226 @@ function render(list, status) {
   table.rows.add(tableData).draw(false);
 }
 
-function registerActivity(id) {
-  Swal.fire({
-    title: '<span class="text-blue-600">ยืนยันการสมัคร</span>',
-    html: '<div class="text-gray-600"><i class="fas fa-question-circle text-blue-500 mr-2"></i>คุณต้องการสมัครกิจกรรมนี้หรือไม่?</div>',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: '<i class="fas fa-check mr-2"></i>สมัคร',
-    cancelButtonText: '<i class="fas fa-times mr-2"></i>ยกเลิก',
-    confirmButtonColor: '#3B82F6',
-    cancelButtonColor: '#6B7280',
-    background: '#F8FAFC',
-    customClass: {
-      popup: 'rounded-2xl shadow-2xl',
-      confirmButton: 'rounded-full px-6 py-3 font-bold',
-      cancelButton: 'rounded-full px-6 py-3 font-bold'
-    }
-  }).then((result) => {
-    if (result.isConfirmed) {
-      // Show loading
-      Swal.fire({
-        title: 'กำลังสมัคร...',
-        html: '<div class="flex justify-center"><div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div></div>',
-        showConfirmButton: false,
-        allowOutsideClick: false
-      });
+// Enhanced registration function with better performance
+async function registerActivity(id) {
+  try {
+    const result = await Swal.fire({
+      title: '<span class="text-blue-600">ยืนยันการสมัคร</span>',
+      html: '<div class="text-gray-600"><i class="fas fa-question-circle text-blue-500 mr-2"></i>คุณต้องการสมัครกิจกรรมนี้หรือไม่?</div>',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-check mr-2"></i>สมัคร',
+      cancelButtonText: '<i class="fas fa-times mr-2"></i>ยกเลิก',
+      confirmButtonColor: '#3B82F6',
+      cancelButtonColor: '#6B7280',
+      background: '#F8FAFC',
+      customClass: {
+        popup: 'rounded-2xl shadow-2xl',
+        confirmButton: 'rounded-full px-6 py-3 font-bold',
+        cancelButton: 'rounded-full px-6 py-3 font-bold'
+      }
+    });
 
-      const fd = new FormData();
-      fd.append('action','register');
-      fd.append('activity_id', id);
-      fetch('../controllers/BestActivityController.php', { method: 'POST', body: fd })
-        .then(r=>r.json()).then(d=>{
-          if (!d.success) {
-            showToast(d.message||'สมัครไม่สำเร็จ','error');
-          } else {
-            Swal.fire({
-              title: 'สมัครสำเร็จ! 🎉',
-              text: d.message||'ยินดีด้วย! คุณได้สมัครกิจกรรมเรียบร้อยแล้ว',
-              icon: 'success',
-              confirmButtonText: 'รับทราบ',
-              confirmButtonColor: '#10B981',
-              customClass: {
-                popup: 'rounded-2xl shadow-2xl',
-                confirmButton: 'rounded-full px-6 py-3 font-bold'
-              }
-            });
-          }
-          init();
-        });
+    if (!result.isConfirmed) return;
+
+    // Show optimized loading with timeout
+    const loadingAlert = Swal.fire({
+      title: 'กำลังสมัคร...',
+      html: '<div class="flex flex-col items-center"><div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-2"></div><p class="text-sm text-gray-600">กรุณารอสักครู่...</p></div>',
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      timer: 10000, // Auto close after 10 seconds if no response
+      timerProgressBar: true
+    });
+
+    const fd = new FormData();
+    fd.append('action', 'register');
+    fd.append('activity_id', id);
+    
+    // Set shorter timeout for faster response
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
+    const response = await fetch('../controllers/BestActivityController.php', { 
+      method: 'POST', 
+      body: fd,
+      signal: controller.signal,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest' // Help server optimize response
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
     }
-  });
+    
+    const data = await response.json();
+    
+    // Close loading immediately
+    Swal.close();
+    
+    if (!data.success) {
+      showToast(data.message || 'สมัครไม่สำเร็จ', 'error');
+    } else {
+      // Clear cache immediately for faster refresh
+      dataCache.status = null;
+      dataCache.list = null;
+      
+      // Show success message
+      await Swal.fire({
+        title: 'สมัครสำเร็จ! 🎉',
+        text: data.message || 'ยินดีด้วย! คุณได้สมัครกิจกรรมเรียบร้อยแล้ว',
+        icon: 'success',
+        confirmButtonText: 'รับทราบ',
+        confirmButtonColor: '#10B981',
+        timer: 3000,
+        timerProgressBar: true,
+        customClass: {
+          popup: 'rounded-2xl shadow-2xl',
+          confirmButton: 'rounded-full px-6 py-3 font-bold'
+        }
+      });
+      
+      // Fast refresh without full reload
+      await quickRefresh();
+    }
+    
+  } catch (error) {
+    Swal.close();
+    console.error('Registration error:', error);
+    
+    if (error.name === 'AbortError') {
+      showToast('การสมัครใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง', 'warning');
+    } else {
+      showToast('เกิดข้อผิดพลาดในการสมัคร กรุณาลองใหม่อีกครั้ง', 'error');
+    }
+  }
 }
 
-function init() {
-  // Show loading state
-  const statusBox = document.getElementById('status-box');
-  statusBox.innerHTML = `
-    <div class="flex items-center justify-center p-6 rounded-2xl bg-gray-100">
-      <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mr-4"></div>
-      <span class="text-gray-600">กำลังโหลดข้อมูล...</span>
-    </div>`;
+// Quick refresh function for faster updates
+async function quickRefresh() {
+  try {
+    // Show minimal loading
+    const statusBox = document.getElementById('status-box');
+    const originalContent = statusBox.innerHTML;
+    statusBox.innerHTML = `
+      <div class="flex items-center justify-center p-4 rounded-xl bg-blue-50">
+        <div class="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent mr-2"></div>
+        <span class="text-blue-600 text-sm">กำลังอัพเดท...</span>
+      </div>`;
 
-  // Parallel loading for better performance
-  Promise.all([loadStatus(false), loadList(false)]).then(([status, list]) => {
+    // Load fresh data in parallel
+    const [statusResult, listResult] = await Promise.all([
+      loadStatus(false),
+      loadList(false)
+    ]);
+
+    if (statusResult.success && listResult.success) {
+      renderStatus(statusResult);
+      render(listResult.data || [], statusResult);
+    } else {
+      // Restore original content if failed
+      statusBox.innerHTML = originalContent;
+      showToast('ไม่สามารถอัพเดทข้อมูลได้', 'warning');
+    }
+    
+  } catch (error) {
+    console.error('Quick refresh error:', error);
+    showToast('ไม่สามารถอัพเดทข้อมูลได้', 'warning');
+  }
+}
+
+// Enhanced init function with better performance
+async function init(useQuickLoad = false) {
+  const statusBox = document.getElementById('status-box');
+  
+  if (!useQuickLoad) {
+    // Show loading state only for full load
+    statusBox.innerHTML = `
+      <div class="flex items-center justify-center p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+        <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mr-4"></div>
+        <span class="text-blue-600 font-medium">กำลังโหลดข้อมูล...</span>
+      </div>`;
+  }
+
+  try {
+    // Use cache for faster subsequent loads
+    const [status, list] = await Promise.all([
+      loadStatus(!useQuickLoad), 
+      loadList(!useQuickLoad)
+    ]);
+
     if (status.success && list.success) {
       renderStatus(status);
       render(list.data || [], status);
     } else {
       statusBox.innerHTML = `
-        <div class="p-6 rounded-2xl bg-red-100 border-2 border-red-300">
+        <div class="p-6 rounded-2xl bg-red-100 border-2 border-red-300 shadow-lg">
           <div class="text-red-700 text-center">
             <i class="fas fa-exclamation-triangle mr-2"></i>
-            เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณารีเฟรชหน้าเว็บ
+            เกิดข้อผิดพลาดในการโหลดข้อมูล 
+            <button onclick="init(false)" class="ml-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+              <i class="fas fa-refresh mr-1"></i>รีโหลด
+            </button>
           </div>
         </div>`;
     }
-  }).catch(error => {
+  } catch (error) {
     console.error('Init error:', error);
     showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
-  });
+    
+    // Show retry button
+    statusBox.innerHTML = `
+      <div class="p-6 rounded-2xl bg-yellow-100 border-2 border-yellow-300 shadow-lg">
+        <div class="text-yellow-700 text-center">
+          <i class="fas fa-wifi mr-2"></i>
+          ไม่สามารถเชื่อมต่อได้ 
+          <button onclick="init(false)" class="ml-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">
+            <i class="fas fa-refresh mr-1"></i>ลองใหม่
+          </button>
+        </div>
+      </div>`;
+  }
 }
 
-// Use event delegation to handle button clicks
+// Use event delegation to handle button clicks with better performance
 $(document).on('click', '.apply', function() {
   const activityId = $(this).data('id');
-  registerActivity(activityId);
+  if (activityId) {
+    // Disable button immediately to prevent double clicks
+    $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>กำลังสมัคร...');
+    
+    registerActivity(activityId).finally(() => {
+      // Re-enable button after process completes (will be updated by render anyway)
+      setTimeout(() => {
+        $(this).prop('disabled', false);
+      }, 1000);
+    });
+  }
 });
 
-document.addEventListener('DOMContentLoaded', init);
+// Initialize when DOM is ready with performance monitoring
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Best registration page loaded');
+  const startTime = performance.now();
+  
+  init().finally(() => {
+    const loadTime = performance.now() - startTime;
+    console.log(`⚡ Page initialized in ${Math.round(loadTime)}ms`);
+  });
+});
+
+// Add keyboard shortcut for refresh (Ctrl+R alternative)
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'r' && e.shiftKey) {
+    e.preventDefault();
+    console.log('🔄 Manual refresh triggered');
+    init(false);
+  }
+});
 </script>
 
 <!-- Add Font Awesome and additional CSS -->
