@@ -33,7 +33,7 @@ switch ($action) {
             $club['advisor_teacher_name'] = $advisor ? $advisor['Teach_name'] : $club['advisor_teacher'];
             $club['current_members_count'] = $clubModel->getCurrentMembers($club['club_id']);
         }
-        echo json_encode(['data' => $clubs, 'term' => $current_term, 'year' => $current_year]);
+        echo json_encode(['success' => true, 'data' => $clubs, 'term' => $current_term, 'year' => $current_year]);
         exit;
 
     case 'list_by_advisor':
@@ -45,7 +45,7 @@ switch ($action) {
             $club['advisor_teacher_name'] = $advisor ? $advisor['Teach_name'] : $club['advisor_teacher'];
             $club['current_members_count'] = $clubModel->getCurrentMembers($club['club_id'], $current_term, $current_year);
         }
-        echo json_encode(['data' => $clubs, 'term' => $current_term, 'year' => $current_year]);
+        echo json_encode(['success' => true, 'data' => $clubs, 'term' => $current_term, 'year' => $current_year]);
         exit;
 
     case 'create':
@@ -166,6 +166,71 @@ switch ($action) {
         $stmt = $pdo->prepare("DELETE FROM club_members WHERE student_id = :student_id AND club_id = :club_id AND term = :term AND year = :year");
         $success = $stmt->execute(['student_id' => $student_id, 'club_id' => $club_id, 'term' => $current_term, 'year' => $current_year]);
         echo json_encode(['success' => $success, 'term' => $current_term, 'year' => $current_year]);
+        exit;
+
+    case 'stats':
+        // ดึงสถิติภาพรวมสำหรับ Charts
+        $clubs = $clubModel->getAll($current_term, $current_year);
+        
+        $totalClubs = count($clubs);
+        $totalStudents = 0;
+        $openClubs = 0;
+        $fullClubs = 0;
+        $gradeStats = [
+            'ม.1' => 0,
+            'ม.2' => 0,
+            'ม.3' => 0,
+            'ม.4' => 0,
+            'ม.5' => 0,
+            'ม.6' => 0
+        ];
+        $clubCapacityData = [];
+        
+        foreach ($clubs as $club) {
+            $currentMembers = $clubModel->getCurrentMembers($club['club_id']);
+            $maxMembers = (int)($club['max_members'] ?? 0);
+            $totalStudents += $currentMembers;
+            
+            if ($currentMembers >= $maxMembers && $maxMembers > 0) {
+                $fullClubs++;
+            } else {
+                $openClubs++;
+            }
+            
+            // เก็บข้อมูลสำหรับ Top clubs chart
+            $clubCapacityData[] = [
+                'name' => mb_substr($club['club_name'], 0, 15, 'UTF-8'),
+                'current' => $currentMembers,
+                'max' => $maxMembers
+            ];
+            
+            // นับตามระดับชั้น
+            $grades = explode(',', $club['grade_levels'] ?? '');
+            foreach ($grades as $grade) {
+                $grade = trim($grade);
+                if (isset($gradeStats[$grade])) {
+                    $gradeStats[$grade] += $currentMembers;
+                }
+            }
+        }
+        
+        // เรียงลำดับ clubs ตามจำนวนสมาชิก
+        usort($clubCapacityData, function($a, $b) {
+            return $b['current'] - $a['current'];
+        });
+        $topClubs = array_slice($clubCapacityData, 0, 8);
+        
+        echo json_encode([
+            'success' => true,
+            'totalClubs' => $totalClubs,
+            'totalStudents' => $totalStudents,
+            'openClubs' => $openClubs,
+            'fullClubs' => $fullClubs,
+            'gradeStats' => $gradeStats,
+            'topClubs' => $topClubs,
+            'term' => $current_term,
+            'year' => $current_year
+        ]);
         exit;
 
     default:

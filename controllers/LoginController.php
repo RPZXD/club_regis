@@ -45,4 +45,19 @@ class LoginController
             return "ชื่อผู้ใช้, รหัสผ่าน หรือบทบาทไม่ถูกต้อง 🚫";
         }
     }
+
+    /**
+     * Get redirect URL based on user role
+     */
+    public function getRedirectUrl($role)
+    {
+        $redirectMap = [
+            'ครู' => 'teacher/index.php',
+            'นักเรียน' => 'student/index.php',
+            'เจ้าหน้าที่' => 'officer/index.php',
+            'admin' => 'officer/index.php',
+            'ผู้บริหาร' => 'officer/index.php'
+        ];
+        return $redirectMap[$role] ?? 'index.php';
+    }
 }

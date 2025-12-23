@@ -24,7 +24,7 @@ class DatabaseUsers
             } else {
                 // Local development environment (XAMPP)
                 $username = 'root';
-                $password = '';
+                $password = 'storage';
             }
         }
 
