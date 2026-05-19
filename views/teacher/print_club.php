@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>พิมพ์รายชื่อสมาชิกชุมนุม - <?= htmlspecialchars($club['club_name']) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../dist/css/tailwind.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Sarabun', sans-serif; }
