@@ -6,7 +6,7 @@
         </div>
         <div>
             <h1 class="text-xl font-black text-gray-800 dark:text-white">สมัครชุมนุม</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400">เลือกชุมนุมสำหรับระดับชั้น <?= htmlspecialchars($stu_grade) ?></p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">เลือกชุมนุมสำหรับระดับชั้น <?= htmlspecialchars($stu_grade) ?> ภาคเรียนที่ <?= htmlspecialchars($current_term) ?> ปีการศึกษา <?= htmlspecialchars($current_year) ?></p>
         </div>
     </div>
 </div>

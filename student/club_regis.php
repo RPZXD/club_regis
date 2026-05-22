@@ -30,6 +30,7 @@ $regisOpen = ($regisStart && $regisEnd && $now >= $regisStart && $now <= $regisE
 require_once('../classes/DatabaseClub.php');
 require_once('../models/Club.php');
 require_once('../classes/DatabaseUsers.php');
+require_once('../models/TermPee.php');
 
 use App\DatabaseClub;
 use App\Models\Club;
@@ -40,14 +41,17 @@ $pdo = $db->getPDO();
 $clubModel = new Club($pdo);
 $dbUsers = new DatabaseUsers();
 
-// Get clubs for student's grade level
-$allClubs = $clubModel->getAll();
+$termPee = \TermPee::getCurrent();
+$current_term = $termPee->term;
+$current_year = $termPee->pee;
+
+// Get clubs for student's grade level and current term/year
+$allClubs = $clubModel->getAll($current_term, $current_year);
 $clubs = [];
 foreach ($allClubs as $club) {
     $grades = array_map('trim', explode(',', $club['grade_levels']));
     if (in_array($stu_grade, $grades)) {
-        $currentMembers = $db->getCurrentMembers($club['club_id']);
-        $club['current_members_count'] = count($currentMembers);
+        $club['current_members_count'] = $clubModel->getCurrentMembers($club['club_id'], $current_term, $current_year);
 
         $advisor = $dbUsers->query("SELECT Teach_name FROM teacher WHERE Teach_id = :id", ['id' => $club['advisor_teacher']])->fetch();
         $club['advisor_teacher_name'] = $advisor ? $advisor['Teach_name'] : $club['advisor_teacher'];
