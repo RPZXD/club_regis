@@ -1,14 +1,19 @@
 <!-- Header Section -->
-<div class="mb-6">
-    <div class="flex items-center gap-3 mb-4">
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-3">
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-violet-500/30">
             <i class="fas fa-chart-bar text-xl"></i>
         </div>
         <div>
             <h1 class="text-xl font-black text-gray-800 dark:text-white">รายงานชุมนุม</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400">ดูสถิติและข้อมูลการลงทะเบียน</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">ดูสถิติและข้อมูลการลงทะเบียน ประจำภาคเรียนที่ <?= htmlspecialchars($current_term) ?> ปีการศึกษา <?= htmlspecialchars($current_year) ?></p>
         </div>
     </div>
+    <!-- Quick Print school list -->
+    <a href="print_student_list.php?type=school" target="_blank" class="self-start sm:self-center px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2 hover:-translate-y-0.5 text-sm">
+        <i class="fas fa-print"></i>
+        <span>พิมพ์รายชื่อทั้งโรงเรียน</span>
+    </a>
 </div>
 
 <!-- Tab Navigation -->
@@ -34,7 +39,7 @@
 <!-- Tab Content: Room -->
 <div id="tab-room" class="tab-content">
     <div class="glass rounded-2xl p-5 mb-4">
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 items-end">
             <div>
                 <label class="block text-sm font-bold text-gray-600 mb-2">เลือกชั้น</label>
                 <select id="select-level" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 font-bold focus:border-violet-500 focus:outline-none transition-all">
@@ -50,6 +55,12 @@
                     <option value="">-- เลือก --</option>
                 </select>
             </div>
+            <div class="col-span-2 md:col-span-1">
+                <button id="btn-print-room" class="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fas fa-print"></i>
+                    <span>พิมพ์ใบรายชื่อห้องนี้</span>
+                </button>
+            </div>
         </div>
     </div>
     <div id="room-table-container" class="glass rounded-2xl p-5">
@@ -63,14 +74,22 @@
 <!-- Tab Content: Level -->
 <div id="tab-level" class="tab-content hidden">
     <div class="glass rounded-2xl p-5 mb-4">
-        <div>
-            <label class="block text-sm font-bold text-gray-600 mb-2">เลือกชั้น</label>
-            <select id="select-level2" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 font-bold focus:border-violet-500 focus:outline-none transition-all">
-                <option value="">-- เลือก --</option>
-                <?php foreach(['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'] as $g): ?>
-                <option value="<?= $g ?>"><?= $g ?></option>
-                <?php endforeach; ?>
-            </select>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+            <div class="md:col-span-2">
+                <label class="block text-sm font-bold text-gray-600 mb-2">เลือกชั้น</label>
+                <select id="select-level2" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 font-bold focus:border-violet-500 focus:outline-none transition-all">
+                    <option value="">-- เลือก --</option>
+                    <?php foreach(['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'] as $g): ?>
+                    <option value="<?= $g ?>"><?= $g ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <button id="btn-print-level" class="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fas fa-print"></i>
+                    <span>พิมพ์ใบรายชื่อระดับชั้นนี้</span>
+                </button>
+            </div>
         </div>
     </div>
     <div id="level-table-container" class="glass rounded-2xl p-5">
@@ -84,8 +103,8 @@
 <!-- Tab Content: Overview -->
 <div id="tab-overview" class="tab-content hidden">
     <div id="overview-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"></div>
-    <div class="glass rounded-2xl p-5 mb-6">
-        <canvas id="overview-chart" height="150"></canvas>
+    <div class="glass rounded-2xl p-5 mb-6 relative h-[280px]">
+        <canvas id="overview-chart"></canvas>
     </div>
     <div id="overview-table-container" class="glass rounded-2xl p-5">
         <div class="text-center py-10 text-gray-400">
@@ -127,30 +146,68 @@ document.querySelectorAll('.report-tab').forEach(tab => {
     });
 });
 
-// Room dropdown
-document.getElementById('select-level').addEventListener('change', function() {
+// Room dropdown and print button
+const btnPrintRoom = document.getElementById('btn-print-room');
+const selectLevel = document.getElementById('select-level');
+const selectRoom = document.getElementById('select-room');
+
+selectLevel.addEventListener('change', function() {
     const level = this.value;
-    const roomSelect = document.getElementById('select-room');
-    roomSelect.disabled = !level;
-    roomSelect.innerHTML = '<option value="">-- เลือก --</option>';
+    selectRoom.disabled = !level;
+    selectRoom.innerHTML = '<option value="">-- เลือก --</option>';
+    if (btnPrintRoom) btnPrintRoom.disabled = true;
     if (level) {
         // We could fetch actual rooms, but 1-15 is common. 
         // Let's use 1-12 as it's more standard for Phichai
         for (let i = 1; i <= 12; i++) {
-            roomSelect.innerHTML += `<option value="${i}">${i}</option>`;
+            selectRoom.innerHTML += `<option value="${i}">${i}</option>`;
         }
     }
 });
 
-document.getElementById('select-room').addEventListener('change', function() {
-    const level = document.getElementById('select-level').value;
+selectRoom.addEventListener('change', function() {
+    const level = selectLevel.value;
     const room = this.value;
-    if (level && room) loadRoomReport(level, room);
+    if (level && room) {
+        loadRoomReport(level, room);
+        if (btnPrintRoom) btnPrintRoom.disabled = false;
+    } else {
+        if (btnPrintRoom) btnPrintRoom.disabled = true;
+    }
 });
 
-document.getElementById('select-level2').addEventListener('change', function() {
-    if (this.value) loadLevelReport(this.value);
+if (btnPrintRoom) {
+    btnPrintRoom.addEventListener('click', function() {
+        const level = selectLevel.value;
+        const room = selectRoom.value;
+        if (level && room) {
+            window.open(`print_student_list.php?type=room&level=${encodeURIComponent(level)}&room=${encodeURIComponent(room)}`, '_blank');
+        }
+    });
+}
+
+// Level dropdown and print button
+const btnPrintLevel = document.getElementById('btn-print-level');
+const selectLevel2 = document.getElementById('select-level2');
+
+selectLevel2.addEventListener('change', function() {
+    const level = this.value;
+    if (level) {
+        loadLevelReport(level);
+        if (btnPrintLevel) btnPrintLevel.disabled = false;
+    } else {
+        if (btnPrintLevel) btnPrintLevel.disabled = true;
+    }
 });
+
+if (btnPrintLevel) {
+    btnPrintLevel.addEventListener('click', function() {
+        const level = selectLevel2.value;
+        if (level) {
+            window.open(`print_student_list.php?type=level&level=${encodeURIComponent(level)}`, '_blank');
+        }
+    });
+}
 
 async function loadRoomReport(level, room) {
     const container = document.getElementById('room-table-container');
@@ -376,6 +433,58 @@ async function loadOverview() {
                     <span>Real-time data synced</span>
                 </div>
             `;
+
+            // Render Chart.js Bar Chart
+            const ctx = document.getElementById('overview-chart').getContext('2d');
+            if (window.myOverviewChart) {
+                window.myOverviewChart.destroy();
+            }
+            window.myOverviewChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: levels,
+                    datasets: [
+                        {
+                            label: 'ลงทะเบียนแล้ว',
+                            data: levels.map(l => sum[l]),
+                            backgroundColor: 'rgba(139, 92, 246, 0.85)',
+                            borderColor: 'rgba(139, 92, 246, 1)',
+                            borderWidth: 1,
+                            borderRadius: 8
+                        },
+                        {
+                            label: 'นักเรียนทั้งหมด',
+                            data: levels.map(l => studentData[l] || 0),
+                            backgroundColor: 'rgba(229, 231, 235, 0.7)',
+                            borderColor: 'rgba(209, 213, 219, 1)',
+                            borderWidth: 1,
+                            borderRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: { family: 'Mali', weight: 'bold' }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { font: { family: 'Mali', weight: 'bold' } },
+                            grid: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { font: { family: 'Mali' } }
+                        }
+                    }
+                }
+            });
         }
     } catch (e) {
         console.error('Overview loading error:', e);

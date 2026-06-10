@@ -10,6 +10,11 @@ $global = $config['global'];
 
 $pageTitle = 'รายงานชุมนุม';
 
+require_once __DIR__ . '/../models/TermPee.php';
+$termPee = TermPee::getCurrent();
+$current_term = $termPee->term;
+$current_year = $termPee->pee;
+
 ob_start();
 include '../views/officer/club_report.php';
 $content = ob_get_clean();
