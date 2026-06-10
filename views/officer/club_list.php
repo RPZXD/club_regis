@@ -108,8 +108,9 @@
                     <th class="py-5 px-6 font-black text-sm uppercase tracking-wider">ชื่อชุมนุม / รายละเอียด</th>
                     <th class="py-5 px-6 font-black text-sm uppercase tracking-wider">ครูที่ปรึกษา</th>
                     <th class="py-5 px-6 font-black text-sm uppercase tracking-wider text-center">ระดับชั้น</th>
+                    <th class="py-5 px-6 font-black text-sm uppercase tracking-wider text-center">ภาคเรียน/ปีการศึกษา</th>
                     <th class="py-5 px-6 font-black text-sm uppercase tracking-wider text-center">สมาชิก / ที่รับ</th>
-                    <th class="py-5 px-6 font-black text-sm uppercase tracking-wider text-center w-32">จัดการ</th>
+                    <th class="py-5 px-6 font-black text-sm uppercase tracking-wider text-center w-48">จัดการ</th>
                 </tr>
             </thead>
             <tbody id="club-table-body" class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -119,9 +120,69 @@
     </div>
 </div>
 
+<!-- Modal Manage Members -->
+<div id="members-modal" class="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm hidden p-0 md:p-4">
+    <div class="bg-white dark:bg-slate-900 w-full md:max-w-3xl md:rounded-3xl rounded-t-3xl shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up flex flex-col">
+        <!-- Modal Header -->
+        <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex justify-between items-center text-white z-15">
+            <div>
+                <h3 id="members-modal-title" class="text-xl font-black">จัดการสมาชิก</h3>
+                <p id="members-modal-subtitle" class="text-blue-200 text-sm">รายชื่อนักเรียนในชุมนุม</p>
+            </div>
+            <button onclick="closeMembersModal()" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-all active:scale-95">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        
+        <!-- Modal Content -->
+        <div class="p-6 overflow-y-auto flex-1">
+            <!-- Loading State -->
+            <div id="members-loading" class="text-center py-12">
+                <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-gray-500 dark:text-gray-400 font-bold">กำลังโหลดรายชื่อสมาชิก...</p>
+            </div>
+            
+            <!-- Table View -->
+            <div id="members-table-container" class="hidden overflow-x-auto rounded-2xl border border-gray-100 dark:border-slate-800">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-50 dark:bg-slate-800/50 text-gray-700 dark:text-gray-200 text-xs font-black uppercase border-b border-gray-100 dark:border-slate-800">
+                            <th class="py-4 px-4 text-center w-12">#</th>
+                            <th class="py-4 px-4 text-center w-24">รหัสประจำตัว</th>
+                            <th class="py-4 px-4">ชื่อ-นามสกุล</th>
+                            <th class="py-4 px-4 text-center w-20">ระดับชั้น</th>
+                            <th class="py-4 px-4 text-center w-36">วันที่สมัคร</th>
+                            <th class="py-4 px-4 text-center w-20">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-members-body" class="divide-y divide-gray-100 dark:divide-slate-850">
+                        <!-- Rows injected here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="members-empty" class="hidden text-center py-16">
+                <div class="w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user-slash text-gray-300 dark:text-gray-500 text-2xl"></i>
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 font-bold">ยังไม่มีสมาชิกในชุมนุมนี้</p>
+            </div>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="p-4 bg-gray-50 dark:bg-slate-900/30 border-t border-gray-100 dark:border-slate-800 text-right">
+            <button onclick="closeMembersModal()" class="px-5 py-3 rounded-xl font-black text-gray-500 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+                ปิดหน้าต่าง
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 let allClubs = [];
 let gradeStats = {};
+let currentClubId = '';
 
 // Formatting utilities
 const formatGrades = (str) => {
@@ -137,6 +198,7 @@ function renderCard(club) {
     const max = parseInt(club.max_members || 0);
     const percent = max > 0 ? Math.round((current / max) * 100) : 0;
     const isFull = percent >= 100;
+    const escapedClubName = (club.club_name || '').replace(/'/g, "\\'");
     
     return `
         <div class="club-card bg-white dark:bg-slate-800 rounded-3xl shadow-lg shadow-gray-200/50 dark:shadow-black/20 overflow-hidden border border-gray-100/50 dark:border-gray-700 transition-all hover:shadow-xl hover:-translate-y-1 group" 
@@ -147,7 +209,12 @@ function renderCard(club) {
                     <div class="w-12 h-12 rounded-2xl bg-gradient-to-br ${isFull ? 'from-rose-500 to-red-600 shadow-rose-500/20' : 'from-blue-500 to-indigo-600 shadow-blue-500/20'} flex items-center justify-center text-white shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform">
                         <i class="fas ${isFull ? 'fa-lock' : 'fa-users-cog'} text-lg"></i>
                     </div>
-                    ${isFull ? '<span class="px-2.5 py-1 rounded-full bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/30">FULL</span>' : ''}
+                    <div class="flex flex-col items-end gap-1.5">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-black border border-blue-100 dark:border-blue-800/50">
+                            <i class="far fa-calendar-alt text-[9px]"></i> ${club.term}/${club.year}
+                        </span>
+                        ${isFull ? '<span class="px-2.5 py-1 rounded-full bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/30">FULL</span>' : ''}
+                    </div>
                 </div>
                 
                 <h3 class="font-black text-gray-800 dark:text-white text-lg leading-tight mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${club.club_name}</h3>
@@ -173,12 +240,19 @@ function renderCard(club) {
                 </div>
             </div>
             
-            <div class="px-6 py-4 bg-gray-50 dark:bg-slate-900/30 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <div class="px-6 py-4 bg-gray-50 dark:bg-slate-900/30 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2">
                 <span class="text-[11px] font-black font-mono text-gray-400 uppercase">ID ${club.club_id}</span>
-                <a href="print_club.php?club_id=${club.club_id}" target="_blank" 
-                   class="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95 group/btn">
-                    <i class="fas fa-print group-hover/btn:scale-110"></i>
-                </a>
+                <div class="flex items-center gap-2">
+                    <button onclick="manageMembers('${club.club_id}', '${escapedClubName}', '${club.term}', '${club.year}')"
+                       class="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95 font-black text-[10px] uppercase tracking-wider">
+                        <i class="fas fa-users-cog"></i>
+                        สมาชิก
+                    </button>
+                    <a href="print_club.php?club_id=${club.club_id}" target="_blank" 
+                       class="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95 group/btn">
+                        <i class="fas fa-print group-hover/btn:scale-110"></i>
+                    </a>
+                </div>
             </div>
         </div>`;
 }
@@ -188,6 +262,7 @@ function renderTableRow(club) {
     const max = parseInt(club.max_members || 0);
     const percent = max > 0 ? Math.round((current / max) * 100) : 0;
     const isFull = percent >= 100;
+    const escapedClubName = (club.club_name || '').replace(/'/g, "\\'");
     
     return `
         <tr class="club-card hover:bg-blue-50/30 dark:hover:bg-blue-900/5 transition-colors group" 
@@ -211,6 +286,12 @@ function renderTableRow(club) {
                     ${formatGrades(club.grade_levels)}
                 </div>
             </td>
+            <td class="py-5 px-6 text-center">
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-black border border-blue-100/50 dark:border-blue-900/30 shadow-sm">
+                    <i class="far fa-calendar-alt text-[10px]"></i>
+                    ${club.term}/${club.year}
+                </span>
+            </td>
             <td class="py-5 px-6">
                 <div class="flex flex-col items-center">
                     <div class="text-xs font-black mb-1.5 ${isFull ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-blue-400'}">
@@ -222,11 +303,18 @@ function renderTableRow(club) {
                 </div>
             </td>
             <td class="py-5 px-6 text-center">
-                <a href="print_club.php?club_id=${club.club_id}" target="_blank" 
-                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95 font-black text-[10px] uppercase tracking-widest">
-                    <i class="fas fa-print"></i>
-                    PRINT
-                </a>
+                <div class="flex items-center justify-center gap-2">
+                    <button onclick="manageMembers('${club.club_id}', '${escapedClubName}', '${club.term}', '${club.year}')"
+                       class="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95 font-black text-[10px] uppercase tracking-wider">
+                        <i class="fas fa-users-cog"></i>
+                        สมาชิก
+                    </button>
+                    <a href="print_club.php?club_id=${club.club_id}" target="_blank" 
+                       class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95 font-black text-[10px] uppercase tracking-widest">
+                        <i class="fas fa-print"></i>
+                        PRINT
+                    </a>
+                </div>
             </td>
         </tr>`;
 }
@@ -365,6 +453,111 @@ async function loadData() {
         icon.classList.remove('fa-spin');
     }
 }
+
+// Manage members dialog functions
+async function manageMembers(clubId, clubName, term, year) {
+    currentClubId = clubId;
+    document.getElementById('members-modal-title').textContent = `จัดการสมาชิก - ${clubName}`;
+    document.getElementById('members-modal-subtitle').textContent = `ภาคเรียนที่ ${term || '-'} ปีการศึกษา ${year || '-'}`;
+    
+    const modal = document.getElementById('members-modal');
+    modal.classList.remove('hidden');
+    
+    const loading = document.getElementById('members-loading');
+    const tableContainer = document.getElementById('members-table-container');
+    const emptyState = document.getElementById('members-empty');
+    
+    loading.classList.remove('hidden');
+    tableContainer.classList.add('hidden');
+    emptyState.classList.add('hidden');
+    
+    try {
+        const res = await fetch(`../controllers/ClubController.php?action=members&club_id=${clubId}`);
+        const data = await res.json();
+        
+        if (data.success && data.members && data.members.length > 0) {
+            const tbody = document.getElementById('modal-members-body');
+            tbody.innerHTML = data.members.map((stu, idx) => `
+                <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td class="py-3.5 px-4 text-center font-bold text-gray-400 text-xs">${idx + 1}</td>
+                    <td class="py-3.5 px-4 text-center font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">${stu.student_id}</td>
+                    <td class="py-3.5 px-4 font-bold text-gray-800 dark:text-white">${stu.name}</td>
+                    <td class="py-3.5 px-4 text-center">
+                        <span class="inline-block px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-[10px] font-bold">${stu.class_name || '-'}</span>
+                    </td>
+                    <td class="py-3.5 px-4 text-center text-[11px] text-gray-400">${stu.created_at || '-'}</td>
+                    <td class="py-3.5 px-4 text-center">
+                        <button onclick="deleteMember('${stu.student_id}', '${clubId}', '${stu.name.replace(/'/g, "\\'")}')" 
+                                class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-600 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all active:scale-95 mx-auto">
+                            <i class="fas fa-trash-alt text-xs"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            loading.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+        } else {
+            loading.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error(error);
+        loading.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+    }
+}
+
+function closeMembersModal() {
+    document.getElementById('members-modal').classList.add('hidden');
+}
+
+function deleteMember(studentId, clubId, studentName) {
+    Swal.fire({
+        title: 'ยืนยันการลบนักเรียน?',
+        text: `คุณต้องการลบ ${studentName} ออกจากชุมนุมใช่หรือไม่?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'ใช่, ลบออก',
+        cancelButtonText: 'ยกเลิก',
+        customClass: {
+            popup: 'rounded-3xl dark:bg-slate-900',
+            title: 'font-black text-gray-800 dark:text-white',
+            htmlContainer: 'font-bold text-gray-600 dark:text-gray-400'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('../controllers/ClubController.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: new URLSearchParams({
+                    action: 'delete_member',
+                    student_id: studentId,
+                    club_id: clubId
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', showConfirmButton: false, timer: 1200, customClass: { popup: 'rounded-3xl dark:bg-slate-900' } });
+                    // Refresh members list and main stats
+                    manageMembers(clubId, document.getElementById('members-modal-title').textContent.replace('จัดการสมาชิก - ', ''), '', '');
+                    loadData();
+                } else {
+                    Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: data.message, customClass: { popup: 'rounded-3xl dark:bg-slate-900' } });
+                }
+            });
+        }
+    });
+}
+
+// Close modal when clicking outside
+document.getElementById('members-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeMembersModal();
+    }
+});
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {

@@ -155,10 +155,10 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'ข้อมูลไม่ครบถ้วน']);
             exit;
         }
-        // ตรวจสอบสิทธิ์: ต้องเป็นครูที่ปรึกษาชุมนุมนั้น
+        // ตรวจสอบสิทธิ์: ต้องเป็นครูที่ปรึกษาชุมนุมนั้น หรือเป็นเจ้าหน้าที่
         $advisor_teacher = $_SESSION['username'] ?? '';
         $club = $clubModel->getById($club_id, $current_term, $current_year);
-        if (!$club || $club['advisor_teacher'] !== $advisor_teacher) {
+        if (!$club || ($club['advisor_teacher'] !== $advisor_teacher && ($_SESSION['role'] ?? '') !== 'เจ้าหน้าที่')) {
             echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์ลบสมาชิก']);
             exit;
         }
