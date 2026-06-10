@@ -53,10 +53,11 @@ foreach ($allClubs as $club) {
     if (in_array($stu_grade, $grades)) {
         $club['current_members_count'] = $clubModel->getCurrentMembers($club['club_id'], $current_term, $current_year);
 
-        $advisor = $dbUsers->query("SELECT Teach_name FROM teacher WHERE Teach_id = :id", ['id' => $club['advisor_teacher']])->fetch();
-        $club['advisor_teacher_name'] = $advisor ? $advisor['Teach_name'] : $club['advisor_teacher'];
-
-        $clubs[] = $club;
+        $advisor = $dbUsers->query("SELECT Teach_name FROM teacher WHERE Teach_id = :id AND Teach_status = '1'", ['id' => $club['advisor_teacher']])->fetch();
+        if ($advisor) {
+            $club['advisor_teacher_name'] = $advisor['Teach_name'];
+            $clubs[] = $club;
+        }
     }
 }
 

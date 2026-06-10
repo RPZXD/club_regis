@@ -1,25 +1,27 @@
 <!-- Header Section -->
-<div class="mb-6">
-    <div class="flex items-center gap-3 mb-4">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
-            <i class="fas fa-users text-xl"></i>
-        </div>
-        <div>
-            <h1 class="text-xl font-black text-gray-800 dark:text-white">สมัครชุมนุม</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400">เลือกชุมนุมสำหรับระดับชั้น <?= htmlspecialchars($stu_grade) ?> ภาคเรียนที่ <?= htmlspecialchars($current_term) ?> ปีการศึกษา <?= htmlspecialchars($current_year) ?></p>
+<div class="mb-6 animate__animated animate__fadeIn">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
+                <i class="fas fa-users text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-gray-800 dark:text-white">สมัครชุมนุม</h1>
+                <p class="text-xs text-gray-500 dark:text-gray-400">เลือกชุมนุมสำหรับระดับชั้น <?= htmlspecialchars($stu_grade) ?> ภาคเรียนที่ <?= htmlspecialchars($current_term) ?> ปีการศึกษา <?= htmlspecialchars($current_year) ?></p>
+            </div>
         </div>
     </div>
 </div>
 
 <?php if (!$regisOpen): ?>
 <!-- Registration Closed Alert -->
-<div class="glass rounded-2xl p-5 mb-6 border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-900/20">
+<div class="glass rounded-2xl p-5 mb-6 border-l-4 border-amber-500 bg-amber-50/50 dark:bg-amber-900/10 shadow-sm animate__animated animate__shakeX">
     <div class="flex items-start gap-4">
-        <div class="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center text-white flex-shrink-0">
+        <div class="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center text-white flex-shrink-0 shadow-md">
             <i class="fas fa-clock text-xl"></i>
         </div>
         <div>
-            <h3 class="font-black text-amber-700 dark:text-amber-300 text-lg">ระบบสมัครชุมนุมยังไม่เปิด</h3>
+            <h3 class="font-black text-amber-800 dark:text-amber-300 text-lg">ระบบสมัครชุมนุมยังไม่เปิด</h3>
             <?php if ($regisStart && $regisEnd): ?>
                 <p class="text-amber-600 dark:text-amber-400 text-sm mt-1">
                     เปิดรับสมัคร: <b><?= date('d/m/Y H:i', $regisStart) ?></b> ถึง <b><?= date('d/m/Y H:i', $regisEnd) ?></b>
@@ -33,11 +35,11 @@
 <?php endif; ?>
 
 <!-- Search Box -->
-<div class="glass rounded-2xl p-4 mb-6">
-    <div class="relative">
-        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400"></i>
-        <input type="text" id="club-search" placeholder="ค้นหาชื่อชุมนุม..." 
-               class="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-emerald-100 dark:border-emerald-900/50 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-emerald-400 transition-all font-bold placeholder:text-gray-400 placeholder:font-normal">
+<div class="glass rounded-2xl p-4 mb-6 shadow-md shadow-emerald-500/5 transition-all">
+    <div class="relative group">
+        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 group-focus-within:text-emerald-600 transition-colors"></i>
+        <input type="text" id="club-search" placeholder="ค้นหาชื่อชุมนุม หรือ ครูที่ปรึกษา..." 
+               class="w-full pl-12 pr-4 py-4 rounded-xl bg-white dark:bg-slate-800/80 border-2 border-emerald-100 dark:border-slate-700/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400 transition-all font-bold placeholder:text-gray-400 placeholder:font-normal shadow-inner">
     </div>
 </div>
 
@@ -56,54 +58,63 @@
             $current = isset($club['current_members_count']) ? (int)$club['current_members_count'] : 0;
             $percent = $max > 0 ? round(($current / $max) * 100) : 0;
             $isFull = $percent >= 100;
+            $search_str = strtolower($club['club_name'] . ' ' . $club['advisor_teacher_name']);
         ?>
-        <div class="club-card bg-white dark:bg-slate-800 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-black/20 overflow-hidden border border-gray-100 dark:border-gray-700" data-name="<?= htmlspecialchars(strtolower($club['club_name'])) ?>">
-            <div class="p-4 pb-3 overflow-hidden">
-                <div class="flex items-start gap-3">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br <?= $isFull ? 'from-rose-500 to-red-600' : 'from-emerald-500 to-teal-600' ?> flex items-center justify-center text-white shadow-lg flex-shrink-0">
-                        <i class="fas <?= $isFull ? 'fa-lock' : 'fa-users' ?> text-lg"></i>
+        <div class="club-card bg-white dark:bg-slate-800 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-black/20 overflow-hidden border border-gray-100 dark:border-gray-700/80 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl" data-name="<?= htmlspecialchars($search_str) ?>">
+            <div class="p-5 pb-3">
+                <div class="flex items-start gap-3 justify-between">
+                    <div class="flex items-start gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br <?= $isFull ? 'from-rose-500 to-red-600 shadow-rose-500/20' : 'from-emerald-500 to-teal-600 shadow-emerald-500/20' ?> flex items-center justify-center text-white shadow-lg flex-shrink-0">
+                            <i class="fas <?= $isFull ? 'fa-lock' : 'fa-users' ?> text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-black text-gray-800 dark:text-white text-base leading-tight max-w-[180px] break-words"><?= htmlspecialchars($club['club_name']) ?></h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                <i class="fas fa-user-tie text-[10px] mr-1"></i><?= htmlspecialchars($club['advisor_teacher_name']) ?>
+                            </p>
+                        </div>
                     </div>
-                    <div class="flex-1 w-0">
-                        <h3 class="font-black text-gray-800 dark:text-white text-base leading-tight whitespace-nowrap overflow-hidden text-ellipsis"><?= htmlspecialchars($club['club_name']) ?></h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                            <i class="fas fa-user-tie text-xs mr-1"></i><?= htmlspecialchars($club['advisor_teacher_name']) ?>
-                        </p>
+                    <div class="flex flex-col items-end gap-1.5">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-black border border-blue-100 dark:border-blue-800/50">
+                            <i class="far fa-calendar-alt text-[9px]"></i> <?= htmlspecialchars($club['term']) ?>/<?= htmlspecialchars($club['year']) ?>
+                        </span>
+                        <?php if ($isFull): ?>
+                            <span class="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black shadow-md shadow-rose-500/20">เต็ม</span>
+                        <?php endif; ?>
                     </div>
-                    <?php if ($isFull): ?>
-                        <span class="flex-shrink-0 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black ml-1">เต็ม</span>
-                    <?php endif; ?>
                 </div>
             </div>
             
             <!-- Grade Badges -->
-            <div class="px-4 pb-3 flex flex-wrap gap-1.5">
+            <div class="px-5 pb-3 flex flex-wrap gap-1.5">
                 <?php foreach (explode(',', $club['grade_levels']) as $g): ?>
-                    <span class="px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 text-xs font-black"><?= trim($g) ?></span>
+                    <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-xs font-black border border-emerald-100 dark:border-emerald-900/50"><?= trim($g) ?></span>
                 <?php endforeach; ?>
             </div>
             
             <!-- Description -->
-            <div class="px-4 pb-3">
-                <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2"><?= htmlspecialchars($club['description']) ?></p>
+            <div class="px-5 pb-3">
+                <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2"><?= htmlspecialchars($club['description']) ?></p>
             </div>
             
             <!-- Progress Bar -->
-            <div class="mx-4 mb-4 p-3 rounded-xl bg-gray-50 dark:bg-slate-900/50">
+            <div class="mx-5 mb-4 p-3.5 rounded-xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-gray-800">
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs font-black text-gray-500 dark:text-gray-400 uppercase">สมาชิก</span>
+                    <span class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider">สมาชิก</span>
                     <span class="text-sm font-black <?= $isFull ? 'text-rose-500' : 'text-emerald-600' ?>"><?= $current ?> / <?= $max ?> คน</span>
                 </div>
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div class="h-full rounded-full transition-all <?= $isFull ? 'bg-gradient-to-r from-rose-500 to-red-500' : 'bg-gradient-to-r from-emerald-500 to-teal-500' ?>" style="width: <?= $percent ?>%"></div>
+                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner relative">
+                    <div class="h-full rounded-full transition-all duration-500 <?= $isFull ? 'bg-gradient-to-r from-rose-500 to-red-500' : 'bg-gradient-to-r from-emerald-500 to-teal-500' ?>" style="width: <?= $percent ?>%"></div>
                 </div>
             </div>
             
             <!-- Apply Button -->
-            <div class="px-4 py-3 bg-gray-50 dark:bg-slate-900/30 border-t border-gray-100 dark:border-gray-700">
-                <button class="apply-btn w-full py-3 rounded-xl font-black text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 <?= ($isFull || !$regisOpen) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30' ?>"
+            <div class="px-5 py-3 bg-gray-50 dark:bg-slate-900/30 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
+                <span class="text-[10px] font-mono text-gray-400">ID: <?= htmlspecialchars($club['club_id']) ?></span>
+                <button class="apply-btn px-6 py-3 rounded-xl font-black text-sm text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 <?= ($isFull || !$regisOpen) ? 'bg-gray-300 dark:bg-slate-700 text-gray-500 dark:text-gray-400 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30' ?>"
                         data-id="<?= $club['club_id'] ?>"
                         <?= ($isFull || !$regisOpen) ? 'disabled' : '' ?>>
-                    <i class="fas <?= $isFull ? 'fa-ban' : 'fa-check-circle' ?>"></i>
+                    <i class="fas <?= $isFull ? 'fa-ban' : 'fa-check' ?>"></i>
                     <?= $isFull ? 'เต็มแล้ว' : 'สมัครชุมนุมนี้' ?>
                 </button>
             </div>
@@ -113,53 +124,87 @@
 </div>
 
 <!-- Desktop Table View -->
-<div class="hidden md:block glass rounded-2xl overflow-hidden">
+<div class="hidden md:block glass rounded-3xl overflow-hidden shadow-xl border border-white/50 dark:border-white/10 animate__animated animate__fadeInUp">
     <table id="club-table" class="w-full">
         <thead>
-            <tr class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
-                <th class="py-4 px-4 text-left font-black">ชื่อชุมนุม</th>
-                <th class="py-4 px-4 text-left font-black">ครูที่ปรึกษา</th>
-                <th class="py-4 px-4 text-center font-black">ระดับชั้น</th>
-                <th class="py-4 px-4 text-center font-black">สมาชิก</th>
-                <th class="py-4 px-4 text-center font-black w-32">สมัคร</th>
+            <tr class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-b border-emerald-700">
+                <th class="py-5 px-6 text-left font-black text-sm uppercase tracking-wider">ชื่อชุมนุม / รหัส</th>
+                <th class="py-5 px-4 text-left font-black text-sm uppercase tracking-wider">ครูที่ปรึกษา</th>
+                <th class="py-5 px-4 text-center font-black text-sm uppercase tracking-wider">ระดับชั้น</th>
+                <th class="py-5 px-4 text-center font-black text-sm uppercase tracking-wider">ภาคเรียน/ปีการศึกษา</th>
+                <th class="py-5 px-4 text-center font-black text-sm uppercase tracking-wider">สมาชิก</th>
+                <th class="py-5 px-6 text-center font-black text-sm uppercase tracking-wider w-32">สมัคร</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-            <?php foreach ($clubs as $club): 
-                $max = (int)$club['max_members'];
-                $current = isset($club['current_members_count']) ? (int)$club['current_members_count'] : 0;
-                $percent = $max > 0 ? round(($current / $max) * 100) : 0;
-                $isFull = $percent >= 100;
-            ?>
-            <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                <td class="py-4 px-4">
-                    <div class="font-black text-gray-800 dark:text-white"><?= htmlspecialchars($club['club_name']) ?></div>
-                    <div class="text-xs text-gray-400">ID: <?= htmlspecialchars($club['club_id']) ?></div>
-                </td>
-                <td class="py-4 px-4 text-gray-600 dark:text-gray-400"><?= htmlspecialchars($club['advisor_teacher_name']) ?></td>
-                <td class="py-4 px-4 text-center">
-                    <?php foreach (explode(',', $club['grade_levels']) as $g): ?>
-                        <span class="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 text-[10px] font-bold mr-1"><?= trim($g) ?></span>
-                    <?php endforeach; ?>
-                </td>
-                <td class="py-4 px-4 text-center">
-                    <span class="font-bold <?= $isFull ? 'text-rose-500' : 'text-emerald-600' ?>"><?= $current ?>/<?= $max ?></span>
-                </td>
-                <td class="py-4 px-4 text-center">
-                    <button class="apply-btn px-4 py-2 rounded-xl font-bold text-white transition-all <?= ($isFull || !$regisOpen) ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600 shadow' ?>"
-                            data-id="<?= $club['club_id'] ?>"
-                            <?= ($isFull || !$regisOpen) ? 'disabled' : '' ?>>
-                        <?= $isFull ? 'เต็ม' : 'สมัคร' ?>
-                    </button>
-                </td>
-            </tr>
-            <?php endforeach; ?>
+        <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+            <?php if (empty($clubs)): ?>
+                <tr>
+                    <td colspan="6" class="py-12 text-center text-gray-500 dark:text-gray-400 font-bold bg-white/50 dark:bg-slate-800/50">
+                        <i class="fas fa-folder-open text-3xl mb-3 text-gray-300 block"></i>
+                        ไม่พบชุมนุมสำหรับระดับชั้นนี้
+                    </td>
+                </tr>
+            <?php else: ?>
+                <?php foreach ($clubs as $club): 
+                    $max = (int)$club['max_members'];
+                    $current = isset($club['current_members_count']) ? (int)$club['current_members_count'] : 0;
+                    $percent = $max > 0 ? round(($current / $max) * 100) : 0;
+                    $isFull = $percent >= 100;
+                    $search_str = strtolower($club['club_name'] . ' ' . $club['advisor_teacher_name']);
+                ?>
+                <tr class="club-row hover:bg-emerald-50/20 dark:hover:bg-slate-800/40 transition-colors" data-name="<?= htmlspecialchars($search_str) ?>">
+                    <td class="py-4.5 px-6">
+                        <div class="font-black text-gray-800 dark:text-white mb-0.5"><?= htmlspecialchars($club['club_name']) ?></div>
+                        <div class="text-[10px] font-mono text-gray-400">ID: <?= htmlspecialchars($club['club_id']) ?></div>
+                    </td>
+                    <td class="py-4.5 px-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-xs font-black shadow-sm">
+                                <?= mb_substr($club['advisor_teacher_name'], 0, 1, 'UTF-8') ?>
+                            </div>
+                            <span class="text-sm font-bold text-gray-600 dark:text-gray-300"><?= htmlspecialchars($club['advisor_teacher_name']) ?></span>
+                        </div>
+                    </td>
+                    <td class="py-4.5 px-4 text-center">
+                        <div class="flex flex-wrap justify-center gap-1">
+                            <?php foreach (explode(',', $club['grade_levels']) as $g): ?>
+                                <span class="inline-block px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black border border-emerald-100 dark:border-emerald-900/30"><?= trim($g) ?></span>
+                            <?php endforeach; ?>
+                        </div>
+                    </td>
+                    <td class="py-4.5 px-4 text-center">
+                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-black border border-blue-100/50 dark:border-blue-900/30">
+                            <i class="far fa-calendar-alt text-[9px]"></i>
+                            <?= htmlspecialchars($club['term']) ?>/<?= htmlspecialchars($club['year']) ?>
+                        </span>
+                    </td>
+                    <td class="py-4.5 px-4">
+                        <div class="flex flex-col items-center">
+                            <span class="text-xs font-black mb-1.5 <?= $isFull ? 'text-rose-500' : 'text-emerald-600' ?>">
+                                <?= $current ?> / <?= $max ?> คน <?= $isFull ? '<i class="fas fa-lock text-[9px]"></i>' : '' ?>
+                            </span>
+                            <div class="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner relative">
+                                <div class="h-full rounded-full transition-all duration-500 <?= $isFull ? 'bg-gradient-to-r from-rose-500 to-red-500 shadow-sm' : 'bg-gradient-to-r from-emerald-400 to-teal-500' ?>" style="width: <?= $percent ?>%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4.5 px-6 text-center">
+                        <button class="apply-btn px-5 py-2.5 rounded-xl font-black text-xs text-white transition-all active:scale-[0.95] flex items-center justify-center gap-1.5 mx-auto <?= ($isFull || !$regisOpen) ? 'bg-gray-300 dark:bg-slate-700 text-gray-500 dark:text-gray-400 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-md shadow-emerald-500/20 hover:shadow-lg' ?>"
+                                data-id="<?= $club['club_id'] ?>"
+                                <?= ($isFull || !$regisOpen) ? 'disabled' : '' ?>>
+                            <i class="fas <?= $isFull ? 'fa-ban' : 'fa-check' ?>"></i>
+                            <?= $isFull ? 'เต็ม' : 'สมัคร' ?>
+                        </button>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </tbody>
     </table>
 </div>
 
 <!-- Note -->
-<div class="mt-6 glass rounded-2xl p-4 border-l-4 border-blue-500">
+<div class="mt-6 glass rounded-2xl p-4 border-l-4 border-blue-500 shadow-sm animate__animated animate__fadeIn">
     <p class="text-blue-700 dark:text-blue-300 font-bold flex items-center gap-2 text-sm">
         <i class="fas fa-info-circle text-blue-500"></i>
         หมายเหตุ: สมัครได้เพียง 1 ชุมนุมต่อปี หากมีข้อสงสัย ติดต่อครูที่ปรึกษาชุมนุมหรือฝ่ายกิจกรรมพัฒนาผู้เรียน
@@ -168,12 +213,20 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Search functionality for mobile cards
+    // Real-time Search functionality for BOTH mobile cards and desktop table rows
     document.getElementById('club-search').addEventListener('input', function() {
         const query = this.value.toLowerCase();
+        
+        // Filter cards
         document.querySelectorAll('.club-card').forEach(card => {
             const name = card.dataset.name;
             card.style.display = name.includes(query) ? '' : 'none';
+        });
+
+        // Filter table rows
+        document.querySelectorAll('.club-row').forEach(row => {
+            const name = row.dataset.name;
+            row.style.display = name.includes(query) ? '' : 'none';
         });
     });
 
@@ -190,7 +243,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 showCancelButton: true,
                 confirmButtonColor: '#10b981',
                 confirmButtonText: '<i class="fas fa-check mr-2"></i>สมัครเลย',
-                cancelButtonText: 'ยกเลิก'
+                cancelButtonText: 'ยกเลิก',
+                customClass: {
+                    popup: 'rounded-3xl border border-gray-100 dark:border-gray-800 dark:bg-slate-900',
+                    title: 'font-black text-gray-800 dark:text-white',
+                    htmlContainer: 'font-bold text-gray-600 dark:text-gray-400',
+                    confirmButton: 'rounded-xl font-bold px-5 py-3',
+                    cancelButton: 'rounded-xl font-bold px-5 py-3'
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     fetch('../controllers/RegisClubController.php', {
@@ -206,14 +266,27 @@ document.addEventListener('DOMContentLoaded', function() {
                                 title: 'สมัครสำเร็จ!',
                                 text: data.message,
                                 showConfirmButton: false,
-                                timer: 1500
+                                timer: 1500,
+                                customClass: {
+                                    popup: 'rounded-3xl dark:bg-slate-900'
+                                }
                             }).then(() => location.reload());
                         } else {
-                            Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: data.message });
+                            Swal.fire({ 
+                                icon: 'error', 
+                                title: 'ผิดพลาด', 
+                                text: data.message,
+                                customClass: { popup: 'rounded-3xl dark:bg-slate-900' }
+                            });
                         }
                     })
                     .catch(() => {
-                        Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้' });
+                        Swal.fire({ 
+                            icon: 'error', 
+                            title: 'ผิดพลาด', 
+                            text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้',
+                            customClass: { popup: 'rounded-3xl dark:bg-slate-900' }
+                        });
                     });
                 }
             });
