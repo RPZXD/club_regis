@@ -224,9 +224,9 @@ $studentsJson = json_encode($studentsList, JSON_UNESCAPED_UNICODE);
         <div class="mb-4 border-t pt-3">
             <label class="block text-xs font-bold text-slate-600 mb-1">รูปแบบการจัดกลุ่ม / ขึ้นหน้าใหม่:</label>
             <select id="page-grouping" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-violet-400 outline-none font-semibold">
-                <option value="room" <?= $type === 'room' ? 'selected' : '' ?>>แยกหน้าตามห้องเรียน (ม.X/Y)</option>
-                <option value="level" <?= $type === 'level' ? 'selected' : '' ?>>แยกหน้าตามระดับชั้น (ม.X)</option>
-                <option value="continuous" <?= $type === 'school' ? 'selected' : '' ?>>แสดงรวมกันต่อเนื่อง (ไม่แยกหน้า)</option>
+                <option value="room" selected>แยกหน้าตามห้องเรียน (ม.X/Y)</option>
+                <option value="level">แยกหน้าตามระดับชั้น (ม.X)</option>
+                <option value="continuous">แสดงรวมกันต่อเนื่อง (ไม่แยกหน้า)</option>
             </select>
         </div>
 
@@ -238,8 +238,8 @@ $studentsJson = json_encode($studentsList, JSON_UNESCAPED_UNICODE);
         
         <!-- Font Size Slider -->
         <div class="mb-4">
-            <label class="block text-xs font-bold text-slate-600 mb-1">ขนาดตัวอักษรข้อมูล: <span id="fontSizeDisplay">15px</span></label>
-            <input type="range" id="fontSizeRange" min="10" max="24" value="15" class="w-full h-2 bg-violet-100 rounded-lg appearance-none cursor-pointer accent-violet-600">
+            <label class="block text-xs font-bold text-slate-600 mb-1">ขนาดตัวอักษรข้อมูล: <span id="fontSizeDisplay">10px</span></label>
+            <input type="range" id="fontSizeRange" min="10" max="24" value="10" class="w-full h-2 bg-violet-100 rounded-lg appearance-none cursor-pointer accent-violet-600">
         </div>
 
         <!-- Columns Toggle checkboxes -->
@@ -251,7 +251,7 @@ $studentsJson = json_encode($studentsList, JSON_UNESCAPED_UNICODE);
                     <span class="text-xs text-slate-700 font-semibold">เลขประจำตัวนักเรียน</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" id="col-class" checked class="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 border-slate-300">
+                    <input type="checkbox" id="col-class" class="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 border-slate-300">
                     <span class="text-xs text-slate-700 font-semibold">ระดับชั้น/ห้อง (ม.X/Y)</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
@@ -263,7 +263,7 @@ $studentsJson = json_encode($studentsList, JSON_UNESCAPED_UNICODE);
                     <span class="text-xs text-slate-700 font-semibold">ครูที่ปรึกษาชุมนุม</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" id="col-remarks" checked class="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 border-slate-300">
+                    <input type="checkbox" id="col-remarks" class="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 border-slate-300">
                     <span class="text-xs text-slate-700 font-semibold">ช่องลายมือชื่อ / หมายเหตุ</span>
                 </label>
             </div>
@@ -272,7 +272,7 @@ $studentsJson = json_encode($studentsList, JSON_UNESCAPED_UNICODE);
         <!-- Signature Toggle -->
         <div class="mb-5">
             <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" id="show-signature" checked class="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 border-slate-300">
+                <input type="checkbox" id="show-signature" class="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 border-slate-300">
                 <span class="text-xs text-slate-700 font-bold">แสดงช่องลงชื่อเจ้าหน้าที่ด้านล่าง</span>
             </label>
         </div>
