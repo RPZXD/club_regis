@@ -21,45 +21,27 @@ $termPee = \TermPee::getCurrent();
 $current_term = $termPee->term;
 $current_year = $termPee->pee;
 
-$type = $_GET['type'] ?? 'room';
+$type = $_GET['type'] ?? 'school';
 $level = $_GET['level'] ?? '';
 $room = $_GET['room'] ?? '';
 
-// Normalize level
-$level_num = null;
+// Normalize initial filter values
+$init_level = '';
 if ($level) {
     if (preg_match('/ม\.(\d+)/u', $level, $m)) {
-        $level_num = intval($m[1]);
+        $init_level = $m[1];
     } else {
-        $level_num = intval($level);
+        $init_level = $level;
     }
 }
+$init_room = $room;
 
-// Prepare queries based on print type
+// Query all active students to support dynamic grade/room selection in the UI
 $sql = "SELECT Stu_id, Stu_pre, Stu_name, Stu_sur, Stu_major, Stu_room, Stu_no 
         FROM student 
-        WHERE Stu_status = '1'";
-$params = [];
-
-if ($type === 'room') {
-    if (!$level_num || !$room) {
-        echo "กรุณาระบุระดับชั้นและห้องเรียนให้ถูกต้อง";
-        exit;
-    }
-    $sql .= " AND Stu_major = :level AND Stu_room = :room";
-    $params['level'] = $level_num;
-    $params['room'] = $room;
-} elseif ($type === 'level') {
-    if (!$level_num) {
-        echo "กรุณาระบุระดับชั้นให้ถูกต้อง";
-        exit;
-    }
-    $sql .= " AND Stu_major = :level";
-    $params['level'] = $level_num;
-}
-
-$sql .= " ORDER BY Stu_major ASC, Stu_room ASC, Stu_no ASC";
-$stmt = $dbUsers->query($sql, $params);
+        WHERE Stu_status = '1'
+        ORDER BY Stu_major ASC, Stu_room ASC, Stu_no ASC";
+$stmt = $dbUsers->query($sql);
 $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch club registrations
@@ -118,21 +100,12 @@ foreach ($students as $stu) {
 
 $studentsJson = json_encode($studentsList, JSON_UNESCAPED_UNICODE);
 
-$pageTitle = "พิมพ์รายชื่อสมาชิกชุมนุม";
-if ($type === 'room') {
-    $pageTitle = "รายชื่อสมาชิกชุมนุม ชั้น ม.{$level_num}/{$room}";
-} elseif ($type === 'level') {
-    $pageTitle = "รายชื่อสมาชิกชุมนุม ชั้น ม.{$level_num} ทั้งหมด";
-} elseif ($type === 'school') {
-    $pageTitle = "รายชื่อสมาชิกชุมนุม นักเรียนทั้งโรงเรียน";
-}
-
 ?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title><?= htmlspecialchars($pageTitle) ?></title>
+    <title>พิมพ์รายชื่อสมาชิกชุมนุม</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=TH+Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -206,11 +179,13 @@ if ($type === 'room') {
             padding: 4px 6px;
             line-height: 1.2;
             word-break: break-word;
+            font-size: inherit !important; /* Forces font-size to inherit from the A4 parent sheet */
         }
         table.print-table th {
             background-color: #f8fafc !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            font-size: inherit !important;
         }
     </style>
 </head>
@@ -222,9 +197,31 @@ if ($type === 'room') {
             <i class="fas fa-cog text-violet-500"></i>
             ตั้งค่ารายงานและการพิมพ์
         </h3>
+
+        <!-- Filter Grade Level -->
+        <div class="mb-4">
+            <label class="block text-xs font-bold text-slate-600 mb-1">เลือกระดับชั้น:</label>
+            <select id="filter-level" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-violet-400 outline-none font-semibold">
+                <option value="">ทั้งหมด (ทุกระดับชั้น)</option>
+                <option value="1">มัธยมศึกษาปีที่ 1 (ม.1)</option>
+                <option value="2">มัธยมศึกษาปีที่ 2 (ม.2)</option>
+                <option value="3">มัธยมศึกษาปีที่ 3 (ม.3)</option>
+                <option value="4">มัธยมศึกษาปีที่ 4 (ม.4)</option>
+                <option value="5">มัธยมศึกษาปีที่ 5 (ม.5)</option>
+                <option value="6">มัธยมศึกษาปีที่ 6 (ม.6)</option>
+            </select>
+        </div>
+
+        <!-- Filter Room -->
+        <div class="mb-4">
+            <label class="block text-xs font-bold text-slate-600 mb-1">เลือกห้องเรียน:</label>
+            <select id="filter-room" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-violet-400 outline-none font-semibold">
+                <option value="">ทั้งหมด (ทุกห้อง)</option>
+            </select>
+        </div>
         
         <!-- Page Grouping Options -->
-        <div class="mb-4">
+        <div class="mb-4 border-t pt-3">
             <label class="block text-xs font-bold text-slate-600 mb-1">รูปแบบการจัดกลุ่ม / ขึ้นหน้าใหม่:</label>
             <select id="page-grouping" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-violet-400 outline-none font-semibold">
                 <option value="room" <?= $type === 'room' ? 'selected' : '' ?>>แยกหน้าตามห้องเรียน (ม.X/Y)</option>
@@ -242,7 +239,7 @@ if ($type === 'room') {
         <!-- Font Size Slider -->
         <div class="mb-4">
             <label class="block text-xs font-bold text-slate-600 mb-1">ขนาดตัวอักษรข้อมูล: <span id="fontSizeDisplay">15px</span></label>
-            <input type="range" id="fontSizeRange" min="10" max="22" value="15" class="w-full h-2 bg-violet-100 rounded-lg appearance-none cursor-pointer accent-violet-600">
+            <input type="range" id="fontSizeRange" min="10" max="24" value="15" class="w-full h-2 bg-violet-100 rounded-lg appearance-none cursor-pointer accent-violet-600">
         </div>
 
         <!-- Columns Toggle checkboxes -->
@@ -301,8 +298,13 @@ if ($type === 'room') {
         const students = <?= $studentsJson ?>;
         const currentTerm = <?= json_encode($current_term) ?>;
         const currentYear = <?= json_encode($current_year) ?>;
+
+        const initLevel = <?= json_encode($init_level) ?>;
+        const initRoom = <?= json_encode($init_room) ?>;
         
         // Element Bindings
+        const filterLevel = document.getElementById('filter-level');
+        const filterRoom = document.getElementById('filter-room');
         const groupingSelect = document.getElementById('page-grouping');
         const customTitleInput = document.getElementById('custom-title');
         const fontSizeRange = document.getElementById('fontSizeRange');
@@ -315,12 +317,40 @@ if ($type === 'room') {
         const showSignatureCheck = document.getElementById('show-signature');
         const renderArea = document.getElementById('renderArea');
 
+        function updateRoomOptions() {
+            const lvl = filterLevel.value;
+            const prevRoom = filterRoom.value;
+            
+            filterRoom.innerHTML = '<option value="">ทั้งหมด (ทุกห้อง)</option>';
+            if (lvl) {
+                let maxRoom = 12;
+                if (lvl === '4' || lvl === '5' || lvl === '6') {
+                    maxRoom = 7;
+                }
+                for (let i = 1; i <= maxRoom; i++) {
+                    filterRoom.innerHTML += `<option value="${i}">ห้อง ${i}</option>`;
+                }
+                // restore value if it still fits
+                if (parseInt(prevRoom) <= maxRoom) {
+                    filterRoom.value = prevRoom;
+                }
+            } else {
+                for (let i = 1; i <= 12; i++) {
+                    filterRoom.innerHTML += `<option value="${i}">ห้อง ${i}</option>`;
+                }
+                filterRoom.value = prevRoom;
+            }
+        }
+
         function renderSheets() {
             // Read configuration values
             const grouping = groupingSelect.value;
             const customTitle = customTitleInput.value || 'ใบรายชื่อนักเรียนลงทะเบียนชุมนุม';
             const fSize = fontSizeRange.value;
             fontSizeDisplay.innerText = fSize + 'px';
+
+            const selectedLevel = filterLevel.value;
+            const selectedRoom = filterRoom.value;
 
             const showId = colIdCheck.checked;
             const showClass = colClassCheck.checked;
@@ -332,34 +362,43 @@ if ($type === 'room') {
             // Clear render area
             renderArea.innerHTML = '';
 
+            // Filter students based on dropdown values
+            let filteredStudents = students;
+            if (selectedLevel) {
+                filteredStudents = filteredStudents.filter(s => s.level === parseInt(selectedLevel));
+            }
+            if (selectedRoom) {
+                filteredStudents = filteredStudents.filter(s => s.room === parseInt(selectedRoom));
+            }
+
             // Group students
             let groups = {};
             if (grouping === 'room') {
                 // Group by grade level (Stu_major) and room (Stu_room)
-                students.forEach(s => {
+                filteredStudents.forEach(s => {
                     const key = `ชั้นมัธยมศึกษาปีที่ ${s.level}/${s.room}`;
                     if (!groups[key]) groups[key] = [];
                     groups[key].push(s);
                 });
             } else if (grouping === 'level') {
                 // Group by grade level only (Stu_major)
-                students.forEach(s => {
+                filteredStudents.forEach(s => {
                     const key = `ชั้นมัธยมศึกษาปีที่ ${s.level}`;
                     if (!groups[key]) groups[key] = [];
                     groups[key].push(s);
                 });
             } else {
                 // Single continuous list
-                groups['นักเรียนทั้งหมด'] = students;
+                groups['นักเรียนทั้งหมด'] = filteredStudents;
             }
 
             const groupKeys = Object.keys(groups);
             const totalGroups = groupKeys.length;
 
-            if (totalGroups === 0) {
+            if (totalGroups === 0 || filteredStudents.length === 0) {
                 renderArea.innerHTML = `
                     <div class="paper-sheet flex items-center justify-center">
-                        <p class="text-gray-400 font-bold text-lg">ไม่พบข้อมูลนักเรียน</p>
+                        <p class="text-gray-400 font-bold text-lg">ไม่พบข้อมูลนักเรียนตามเงื่อนไขที่เลือก</p>
                     </div>
                 `;
                 return;
@@ -408,7 +447,7 @@ if ($type === 'room') {
                             <td>${s.fullname}</td>
                             ${showClass ? `<td class="text-center">ม.${s.level}/${s.room}</td>` : ''}
                             ${showClub ? `<td class="${s.club === '-' ? 'text-red-500 font-semibold' : ''}">${s.club}</td>` : ''}
-                            ${showAdvisor ? `<td class="text-sm">${s.advisor}</td>` : ''}
+                            ${showAdvisor ? `<td>${s.advisor}</td>` : ''}
                             ${showRemarks ? `<td></td>` : ''}
                         </tr>
                     `;
@@ -430,7 +469,7 @@ if ($type === 'room') {
                         </div>
                     </div>
 
-                    <table class="print-table text-base">
+                    <table class="print-table">
                         <thead>
                             <tr>
                                 ${headerCols}
@@ -442,18 +481,18 @@ if ($type === 'room') {
                     </table>
 
                     <div class="mt-6 flex flex-col md:flex-row justify-between items-start gap-4 border-t pt-4 print-border" style="page-break-inside: avoid; break-inside: avoid;">
-                        <div class="text-sm text-gray-600">
+                        <div>
                             <div><strong>สรุปยอดทะเบียน:</strong></div>
                             <div>นักเรียนทั้งหมด: ${totalStudents} คน &nbsp;&nbsp;|&nbsp;&nbsp; ลงทะเบียนแล้ว: <span class="font-bold text-emerald-600">${registeredCount}</span> คน &nbsp;&nbsp;|&nbsp;&nbsp; ยังไม่ลงทะเบียน: <span class="font-bold text-red-500">${unregisteredCount}</span> คน</div>
-                            <div class="text-xs text-gray-400 mt-2">พิมพ์เมื่อ: ${printDate}</div>
+                            <div class="text-[0.75em] opacity-75 mt-2">พิมพ์เมื่อ: ${printDate}</div>
                         </div>
 
                         ${showSignature ? `
                         <div class="text-center self-end w-64 mr-4 no-print-break">
                             <div class="border-b border-gray-400 w-full mb-2 h-12"></div>
-                            <div class="text-sm">
+                            <div>
                                 <div>ลงชื่อ ...................................................... ผู้ตรวจสอบ</div>
-                                <div class="text-xs text-gray-500 mt-1">( เจ้าหน้าที่ / นายทะเบียน )</div>
+                                <div class="text-[0.75em] opacity-75 mt-1">( เจ้าหน้าที่ / นายทะเบียน )</div>
                             </div>
                         </div>
                         ` : ''}
@@ -464,6 +503,14 @@ if ($type === 'room') {
             });
         }
 
+        // Handle level selection changes to dynamically adjust room listings
+        filterLevel.addEventListener('change', function() {
+            updateRoomOptions();
+            renderSheets();
+        });
+
+        filterRoom.addEventListener('change', renderSheets);
+
         // Attach event listeners for real-time config updates
         [groupingSelect, customTitleInput, fontSizeRange, colIdCheck, colClassCheck, colClubCheck, colAdvisorCheck, colRemarksCheck, showSignatureCheck].forEach(el => {
             el.addEventListener('change', renderSheets);
@@ -471,6 +518,9 @@ if ($type === 'room') {
         });
 
         // Initialize view
+        filterLevel.value = initLevel;
+        updateRoomOptions();
+        filterRoom.value = initRoom;
         renderSheets();
     </script>
 </body>
