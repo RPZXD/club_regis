@@ -9,11 +9,17 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">ดูสถิติและข้อมูลการลงทะเบียน ประจำภาคเรียนที่ <?= htmlspecialchars($current_term) ?> ปีการศึกษา <?= htmlspecialchars($current_year) ?></p>
         </div>
     </div>
-    <!-- Quick Print school list -->
-    <a href="print_student_list.php?type=school" target="_blank" class="self-start sm:self-center px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2 hover:-translate-y-0.5 text-sm">
-        <i class="fas fa-print"></i>
-        <span>พิมพ์รายชื่อทั้งโรงเรียน</span>
-    </a>
+    <!-- Quick Print & Excel school list -->
+    <div class="flex flex-wrap items-center gap-2 self-start sm:self-center">
+        <a href="print_student_list.php?type=school" target="_blank" class="btn-action-print px-4 py-2.5 font-bold rounded-xl flex items-center gap-2 text-sm">
+            <i class="fas fa-print"></i>
+            <span>พิมพ์รายชื่อทั้งโรงเรียน</span>
+        </a>
+        <a href="export_student_excel.php?type=school" target="_blank" class="btn-action-excel px-4 py-2.5 font-bold rounded-xl flex items-center gap-2 text-sm">
+            <i class="fas fa-file-excel"></i>
+            <span>ส่งออก Excel ทั้งโรงเรียน</span>
+        </a>
+    </div>
 </div>
 
 <!-- Tab Navigation -->
@@ -39,10 +45,10 @@
 <!-- Tab Content: Room -->
 <div id="tab-room" class="tab-content">
     <div class="glass rounded-2xl p-5 mb-4">
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 items-end">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
             <div>
-                <label class="block text-sm font-bold text-gray-600 mb-2">เลือกชั้น</label>
-                <select id="select-level" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 font-bold focus:border-violet-500 focus:outline-none transition-all">
+                <label class="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">เลือกชั้น</label>
+                <select id="select-level" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 text-gray-800 dark:text-white font-bold focus:border-violet-500 focus:outline-none transition-all">
                     <option value="">-- เลือก --</option>
                     <?php foreach(['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'] as $g): ?>
                     <option value="<?= $g ?>"><?= $g ?></option>
@@ -50,15 +56,21 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-bold text-gray-600 mb-2">เลือกห้อง</label>
-                <select id="select-room" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 font-bold focus:border-violet-500 focus:outline-none transition-all" disabled>
+                <label class="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">เลือกห้อง</label>
+                <select id="select-room" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 text-gray-800 dark:text-white font-bold focus:border-violet-500 focus:outline-none transition-all" disabled>
                     <option value="">-- เลือก --</option>
                 </select>
             </div>
-            <div class="col-span-2 md:col-span-1">
-                <button id="btn-print-room" class="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+            <div>
+                <button id="btn-print-room" class="btn-action-print w-full py-3 font-bold rounded-xl flex items-center justify-center gap-2" disabled>
                     <i class="fas fa-print"></i>
-                    <span>พิมพ์ใบรายชื่อห้องนี้</span>
+                    <span>พิมพ์ใบรายชื่อ</span>
+                </button>
+            </div>
+            <div>
+                <button id="btn-excel-room" class="btn-action-excel w-full py-3 font-bold rounded-xl flex items-center justify-center gap-2" disabled>
+                    <i class="fas fa-file-excel"></i>
+                    <span>ส่งออก Excel</span>
                 </button>
             </div>
         </div>
@@ -74,10 +86,10 @@
 <!-- Tab Content: Level -->
 <div id="tab-level" class="tab-content hidden">
     <div class="glass rounded-2xl p-5 mb-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-            <div class="md:col-span-2">
-                <label class="block text-sm font-bold text-gray-600 mb-2">เลือกชั้น</label>
-                <select id="select-level2" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 font-bold focus:border-violet-500 focus:outline-none transition-all">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+            <div class="sm:col-span-2">
+                <label class="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">เลือกชั้น</label>
+                <select id="select-level2" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 text-gray-800 dark:text-white font-bold focus:border-violet-500 focus:outline-none transition-all">
                     <option value="">-- เลือก --</option>
                     <?php foreach(['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6'] as $g): ?>
                     <option value="<?= $g ?>"><?= $g ?></option>
@@ -85,9 +97,15 @@
                 </select>
             </div>
             <div>
-                <button id="btn-print-level" class="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <button id="btn-print-level" class="btn-action-print w-full py-3 font-bold rounded-xl flex items-center justify-center gap-2" disabled>
                     <i class="fas fa-print"></i>
-                    <span>พิมพ์ใบรายชื่อระดับชั้นนี้</span>
+                    <span>พิมพ์ใบรายชื่อ</span>
+                </button>
+            </div>
+            <div>
+                <button id="btn-excel-level" class="btn-action-excel w-full py-3 font-bold rounded-xl flex items-center justify-center gap-2" disabled>
+                    <i class="fas fa-file-excel"></i>
+                    <span>ส่งออก Excel</span>
                 </button>
             </div>
         </div>
@@ -116,6 +134,16 @@
 
 <!-- Tab Content: Club -->
 <div id="tab-club" class="tab-content hidden">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 class="text-base font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+            <i class="fas fa-users text-violet-500"></i>
+            สรุปยอดสมาชิกแยกตามรายชุมนุม
+        </h2>
+        <a href="export_student_excel.php?type=club_summary" target="_blank" class="btn-action-excel px-4 py-2.5 font-bold rounded-xl flex items-center gap-2 text-sm">
+            <i class="fas fa-file-excel"></i>
+            <span>ส่งออก Excel สรุปรายชุมนุม</span>
+        </a>
+    </div>
     <div id="club-table-container" class="glass rounded-2xl p-5">
         <div class="text-center py-10 text-gray-400">
             <i class="fas fa-users text-3xl mb-3 opacity-30"></i>
@@ -129,6 +157,49 @@
 .report-tab.active { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
 .dark .report-tab { background: rgb(51, 65, 85); color: rgb(148, 163, 184); }
 .dark .report-tab.active { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+
+/* Custom Action Buttons */
+.btn-action-print {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+    transition: all 0.2s ease;
+}
+.btn-action-print:hover:not(:disabled) {
+    background: linear-gradient(135deg, #6d28d9, #5b21b6);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+}
+.btn-action-excel {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+    transition: all 0.2s ease;
+}
+.btn-action-excel:hover:not(:disabled) {
+    background: linear-gradient(135deg, #047857, #065f46);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35);
+}
+
+/* Disabled state */
+.btn-action-print:disabled, .btn-action-excel:disabled {
+    background: #e2e8f0 !important;
+    color: #94a3b8 !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    opacity: 0.8 !important;
+}
+
+.dark .btn-action-print:disabled, .dark .btn-action-excel:disabled {
+    background: #334155 !important;
+    color: #64748b !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    opacity: 0.8 !important;
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -146,8 +217,9 @@ document.querySelectorAll('.report-tab').forEach(tab => {
     });
 });
 
-// Room dropdown and print button
+// Room dropdown and print / excel buttons
 const btnPrintRoom = document.getElementById('btn-print-room');
+const btnExcelRoom = document.getElementById('btn-excel-room');
 const selectLevel = document.getElementById('select-level');
 const selectRoom = document.getElementById('select-room');
 
@@ -156,6 +228,7 @@ selectLevel.addEventListener('change', function() {
     selectRoom.disabled = !level;
     selectRoom.innerHTML = '<option value="">-- เลือก --</option>';
     if (btnPrintRoom) btnPrintRoom.disabled = true;
+    if (btnExcelRoom) btnExcelRoom.disabled = true;
     if (level) {
         // We could fetch actual rooms, but 1-15 is common. 
         // Let's use 1-12 as it's more standard for Phichai
@@ -171,8 +244,10 @@ selectRoom.addEventListener('change', function() {
     if (level && room) {
         loadRoomReport(level, room);
         if (btnPrintRoom) btnPrintRoom.disabled = false;
+        if (btnExcelRoom) btnExcelRoom.disabled = false;
     } else {
         if (btnPrintRoom) btnPrintRoom.disabled = true;
+        if (btnExcelRoom) btnExcelRoom.disabled = true;
     }
 });
 
@@ -186,8 +261,19 @@ if (btnPrintRoom) {
     });
 }
 
-// Level dropdown and print button
+if (btnExcelRoom) {
+    btnExcelRoom.addEventListener('click', function() {
+        const level = selectLevel.value;
+        const room = selectRoom.value;
+        if (level && room) {
+            window.open(`export_student_excel.php?type=room&level=${encodeURIComponent(level)}&room=${encodeURIComponent(room)}`, '_blank');
+        }
+    });
+}
+
+// Level dropdown and print / excel buttons
 const btnPrintLevel = document.getElementById('btn-print-level');
+const btnExcelLevel = document.getElementById('btn-excel-level');
 const selectLevel2 = document.getElementById('select-level2');
 
 selectLevel2.addEventListener('change', function() {
@@ -195,8 +281,10 @@ selectLevel2.addEventListener('change', function() {
     if (level) {
         loadLevelReport(level);
         if (btnPrintLevel) btnPrintLevel.disabled = false;
+        if (btnExcelLevel) btnExcelLevel.disabled = false;
     } else {
         if (btnPrintLevel) btnPrintLevel.disabled = true;
+        if (btnExcelLevel) btnExcelLevel.disabled = true;
     }
 });
 
@@ -205,6 +293,15 @@ if (btnPrintLevel) {
         const level = selectLevel2.value;
         if (level) {
             window.open(`print_student_list.php?type=level&level=${encodeURIComponent(level)}`, '_blank');
+        }
+    });
+}
+
+if (btnExcelLevel) {
+    btnExcelLevel.addEventListener('click', function() {
+        const level = selectLevel2.value;
+        if (level) {
+            window.open(`export_student_excel.php?type=level&level=${encodeURIComponent(level)}`, '_blank');
         }
     });
 }

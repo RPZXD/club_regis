@@ -282,6 +282,9 @@ $studentsJson = json_encode($studentsList, JSON_UNESCAPED_UNICODE);
             <button onclick="window.print()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold py-2.5 rounded-xl shadow-lg hover:shadow-violet-200 transition-all flex items-center justify-center gap-2 text-sm">
                 <i class="fas fa-print"></i> พิมพ์ใบรายชื่อ (Print)
             </button>
+            <button onclick="exportCurrentToExcel()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200 transition-all flex items-center justify-center gap-2 text-sm">
+                <i class="fas fa-file-excel"></i> ส่งออก Excel (Export)
+            </button>
             <button onclick="window.close()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 rounded-xl transition-all text-xs">
                 ปิดหน้าต่าง
             </button>
@@ -516,6 +519,25 @@ $studentsJson = json_encode($studentsList, JSON_UNESCAPED_UNICODE);
             el.addEventListener('change', renderSheets);
             el.addEventListener('input', renderSheets);
         });
+
+        // Export to Excel function
+        function exportCurrentToExcel() {
+            const lvl = filterLevel.value;
+            const rm = filterRoom.value;
+            let url = 'export_student_excel.php?';
+            const params = [];
+            if (lvl) params.push('level=' + encodeURIComponent('ม.' + lvl));
+            if (rm) params.push('room=' + encodeURIComponent(rm));
+            if (params.length === 0) {
+                params.push('type=school');
+            } else if (rm) {
+                params.push('type=room');
+            } else {
+                params.push('type=level');
+            }
+            url += params.join('&');
+            window.open(url, '_blank');
+        }
 
         // Initialize view
         filterLevel.value = initLevel;
