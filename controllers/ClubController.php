@@ -168,6 +168,128 @@ switch ($action) {
         echo json_encode(['success' => $success, 'term' => $current_term, 'year' => $current_year]);
         exit;
 
+    case 'search_students':
+        $query = trim($_GET['q'] ?? $_GET['query'] ?? '');
+        if (mb_strlen($query, 'UTF-8') < 1) {
+            echo json_encode(['success' => true, 'students' => []]);
+            exit;
+        }
+
+        // Search in phichaia_student.student table
+        $sql = "SELECT Stu_id, Stu_pre, Stu_name, Stu_sur, Stu_major, Stu_room, Stu_no 
+                FROM student 
+                WHERE Stu_status = '1' 
+                  AND (
+                    Stu_id LIKE :q 
+                    OR Stu_name LIKE :q 
+                    OR Stu_sur LIKE :q 
+                    OR CONCAT(Stu_name, ' ', Stu_sur) LIKE :q 
+                    OR CONCAT(Stu_pre, Stu_name, ' ', Stu_sur) LIKE :q
+                  )
+                ORDER BY CAST(Stu_major AS UNSIGNED) ASC, CAST(Stu_room AS UNSIGNED) ASC, CAST(Stu_no AS UNSIGNED) ASC 
+                LIMIT 20";
+        $stmt = $dbUsers->query($sql, ['q' => "%$query%"]);
+        $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Fetch their current club registrations in this term/year
+        $clubStmt = $pdo->prepare("
+            SELECT cm.student_id, cm.club_id, c.club_name 
+            FROM club_members cm 
+            LEFT JOIN clubs c ON cm.club_id = c.club_id AND cm.term = c.term AND cm.year = c.year 
+            WHERE cm.term = :term AND cm.year = :year
+        ");
+        $clubStmt->execute(['term' => $current_term, 'year' => $current_year]);
+        $registeredMap = [];
+        while ($row = $clubStmt->fetch(PDO::FETCH_ASSOC)) {
+            $registeredMap[$row['student_id']] = [
+                'club_id' => $row['club_id'],
+                'club_name' => $row['club_name'] ?? 'ไม่ทราบชื่อชุมนุม'
+            ];
+        }
+
+        $list = [];
+        foreach ($students as $stu) {
+            $sid = $stu['Stu_id'];
+            $regInfo = $registeredMap[$sid] ?? null;
+            $list[] = [
+                'student_id' => $sid,
+                'prefix' => $stu['Stu_pre'],
+                'name' => $stu['Stu_name'],
+                'surname' => $stu['Stu_sur'],
+                'fullname' => $stu['Stu_pre'] . $stu['Stu_name'] . ' ' . $stu['Stu_sur'],
+                'level' => $stu['Stu_major'],
+                'room' => $stu['Stu_room'],
+                'number' => $stu['Stu_no'],
+                'class_name' => 'ม.' . $stu['Stu_major'] . '/' . $stu['Stu_room'] . ($stu['Stu_no'] ? ' (เลขที่ ' . $stu['Stu_no'] . ')' : ''),
+                'registered_club_id' => $regInfo ? $regInfo['club_id'] : null,
+                'registered_club_name' => $regInfo ? $regInfo['club_name'] : null
+            ];
+        }
+
+        echo json_encode(['success' => true, 'students' => $list]);
+        exit;
+
+    case 'add_member':
+        $student_id = trim($_POST['student_id'] ?? '');
+        $club_id = trim($_POST['club_id'] ?? '');
+        if (!$student_id || !$club_id) {
+            echo json_encode(['success' => false, 'message' => 'กรุณาระบุนักเรียนและชุมนุม']);
+            exit;
+        }
+
+        // Check permissions: officer or advisor
+        $advisor_teacher = $_SESSION['username'] ?? '';
+        $club = $clubModel->getById($club_id, $current_term, $current_year);
+        if (!$club) {
+            echo json_encode(['success' => false, 'message' => 'ไม่พบข้อมูลชุมนุม']);
+            exit;
+        }
+        if ($club['advisor_teacher'] !== $advisor_teacher && ($_SESSION['role'] ?? '') !== 'เจ้าหน้าที่') {
+            echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์จัดการสมาชิกในชุมนุมนี้']);
+            exit;
+        }
+
+        // Check if student exists
+        $stu = $dbUsers->getStudentByUsername($student_id);
+        if (!$stu) {
+            echo json_encode(['success' => false, 'message' => 'ไม่พบข้อมูลนักเรียนในระบบ']);
+            exit;
+        }
+
+        // Check existing registration in this term/year
+        $chkStmt = $pdo->prepare("SELECT * FROM club_members WHERE student_id = :student_id AND term = :term AND year = :year");
+        $chkStmt->execute(['student_id' => $student_id, 'term' => $current_term, 'year' => $current_year]);
+        $existing = $chkStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            if ($existing['club_id'] == $club_id) {
+                echo json_encode(['success' => false, 'message' => 'นักเรียนคนนี้เป็นสมาชิกชุมนุมนี้อยู่แล้ว']);
+                exit;
+            } else {
+                // Update to new club
+                $upStmt = $pdo->prepare("UPDATE club_members SET club_id = :club_id, created_at = NOW() WHERE student_id = :student_id AND term = :term AND year = :year");
+                $upStmt->execute([
+                    'club_id' => $club_id,
+                    'student_id' => $student_id,
+                    'term' => $current_term,
+                    'year' => $current_year
+                ]);
+                echo json_encode(['success' => true, 'message' => 'ย้ายนักเรียนเข้าสู่ชุมนุมเรียบร้อยแล้ว']);
+                exit;
+            }
+        } else {
+            // Insert new member
+            $inStmt = $pdo->prepare("INSERT INTO club_members (student_id, club_id, term, year, created_at) VALUES (:student_id, :club_id, :term, :year, NOW())");
+            $inStmt->execute([
+                'student_id' => $student_id,
+                'club_id' => $club_id,
+                'term' => $current_term,
+                'year' => $current_year
+            ]);
+            echo json_encode(['success' => true, 'message' => 'เพิ่มนักเรียนเข้าชุมนุมสำเร็จ']);
+            exit;
+        }
+
     case 'stats':
         // ดึงสถิติภาพรวมสำหรับ Charts
         $clubs = $clubModel->getAll($current_term, $current_year);

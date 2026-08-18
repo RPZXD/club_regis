@@ -124,7 +124,7 @@
 <div id="members-modal" class="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm hidden p-0 md:p-4">
     <div class="bg-white dark:bg-slate-900 w-full md:max-w-3xl md:rounded-3xl rounded-t-3xl shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up flex flex-col">
         <!-- Modal Header -->
-        <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex justify-between items-center text-white z-15">
+        <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex justify-between items-center text-white z-20">
             <div>
                 <h3 id="members-modal-title" class="text-xl font-black">จัดการสมาชิก</h3>
                 <p id="members-modal-subtitle" class="text-blue-200 text-sm">รายชื่อนักเรียนในชุมนุม</p>
@@ -136,6 +136,40 @@
         
         <!-- Modal Content -->
         <div class="p-6 overflow-y-auto flex-1">
+            <!-- Add Member Box with Autocomplete -->
+            <div class="mb-6 p-4 rounded-2xl bg-blue-50/70 dark:bg-slate-800/70 border border-blue-100 dark:border-slate-700 relative">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-black text-blue-700 dark:text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fas fa-user-plus text-blue-600"></i>
+                        เพิ่มนักเรียนเข้าชุมนุม
+                    </label>
+                    <span class="text-[10px] text-gray-400 font-bold">พิมพ์ชื่อ นามสกุล หรือ เลขประจำตัว</span>
+                </div>
+                
+                <div class="relative" id="autocomplete-container">
+                    <div class="relative flex items-center">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-blue-400">
+                            <i class="fas fa-search text-sm"></i>
+                        </div>
+                        <input type="text" id="add-student-search" 
+                               placeholder="ค้นหาด้วยชื่อ, นามสกุล หรือ เลขประจำตัวนักเรียน..." 
+                               autocomplete="off"
+                               class="w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-slate-900 border-2 border-blue-200 dark:border-slate-700 text-gray-800 dark:text-white font-bold text-sm focus:border-blue-500 focus:outline-none transition-all shadow-sm">
+                        <button id="btn-clear-search" type="button" onclick="clearStudentSearch()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hidden">
+                            <i class="fas fa-times-circle text-sm"></i>
+                        </button>
+                        <div id="search-spinner" class="absolute inset-y-0 right-0 pr-3.5 flex items-center hidden">
+                            <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    </div>
+
+                    <!-- Autocomplete Dropdown List -->
+                    <div id="autocomplete-results" class="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 max-h-72 overflow-y-auto z-50 hidden divide-y divide-gray-100 dark:divide-slate-800">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
             <!-- Loading State -->
             <div id="members-loading" class="text-center py-12">
                 <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -460,6 +494,8 @@ async function manageMembers(clubId, clubName, term, year) {
     document.getElementById('members-modal-title').textContent = `จัดการสมาชิก - ${clubName}`;
     document.getElementById('members-modal-subtitle').textContent = `ภาคเรียนที่ ${term || '-'} ปีการศึกษา ${year || '-'}`;
     
+    clearStudentSearch();
+
     const modal = document.getElementById('members-modal');
     modal.classList.remove('hidden');
     
@@ -488,7 +524,7 @@ async function manageMembers(clubId, clubName, term, year) {
                     <td class="py-3.5 px-4 text-center text-[11px] text-gray-400">${stu.created_at || '-'}</td>
                     <td class="py-3.5 px-4 text-center">
                         <button onclick="deleteMember('${stu.student_id}', '${clubId}', '${stu.name.replace(/'/g, "\\'")}')" 
-                                class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-600 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all active:scale-95 mx-auto">
+                                class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-600 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all active:scale-95 mx-auto" title="ลบออกจากชุมนุม">
                             <i class="fas fa-trash-alt text-xs"></i>
                         </button>
                     </td>
@@ -509,6 +545,7 @@ async function manageMembers(clubId, clubName, term, year) {
 }
 
 function closeMembersModal() {
+    clearStudentSearch();
     document.getElementById('members-modal').classList.add('hidden');
 }
 
@@ -552,6 +589,208 @@ function deleteMember(studentId, clubId, studentName) {
     });
 }
 
+// Student Search Autocomplete & Add Member Logic
+let searchTimeout = null;
+
+function clearStudentSearch() {
+    const input = document.getElementById('add-student-search');
+    const results = document.getElementById('autocomplete-results');
+    const clearBtn = document.getElementById('btn-clear-search');
+    const spinner = document.getElementById('search-spinner');
+    
+    if (input) input.value = '';
+    if (results) {
+        results.innerHTML = '';
+        results.classList.add('hidden');
+    }
+    if (clearBtn) clearBtn.classList.add('hidden');
+    if (spinner) spinner.classList.add('hidden');
+}
+
+function initStudentAutocomplete() {
+    const input = document.getElementById('add-student-search');
+    const results = document.getElementById('autocomplete-results');
+    const clearBtn = document.getElementById('btn-clear-search');
+    const spinner = document.getElementById('search-spinner');
+    
+    if (!input) return;
+
+    input.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(searchTimeout);
+
+        if (query.length > 0) {
+            clearBtn.classList.remove('hidden');
+        } else {
+            clearBtn.classList.add('hidden');
+            results.classList.add('hidden');
+            results.innerHTML = '';
+            spinner.classList.add('hidden');
+            return;
+        }
+
+        spinner.classList.remove('hidden');
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                const res = await fetch(`../controllers/ClubController.php?action=search_students&q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                spinner.classList.add('hidden');
+
+                if (data.success && data.students && data.students.length > 0) {
+                    results.innerHTML = data.students.map(s => {
+                        const isInCurrent = s.registered_club_id == currentClubId;
+                        const isInOther = s.registered_club_id && s.registered_club_id != currentClubId;
+                        const escapedName = s.fullname.replace(/'/g, "\\'");
+                        const escapedClub = (s.registered_club_name || '').replace(/'/g, "\\'");
+
+                        let badgeHtml = '';
+                        let actionBtnHtml = '';
+
+                        if (isInCurrent) {
+                            badgeHtml = `<span class="badge-status badge-current"><i class="fas fa-check-circle"></i> อยู่ในชุมนุมนี้แล้ว</span>`;
+                            actionBtnHtml = `<span class="badge-status badge-member">เป็นสมาชิกแล้ว</span>`;
+                        } else if (isInOther) {
+                            badgeHtml = `<span class="badge-status badge-transfer"><i class="fas fa-exchange-alt"></i> อยู่ชุมนุม: ${s.registered_club_name}</span>`;
+                            actionBtnHtml = `
+                                <button onclick="addStudent('${s.student_id}', '${escapedName}', '${escapedClub}')" 
+                                        class="btn-action-transfer">
+                                    <i class="fas fa-exchange-alt"></i> ย้ายเข้า
+                                </button>
+                            `;
+                        } else {
+                            badgeHtml = `<span class="badge-status badge-new"><i class="fas fa-info-circle"></i> ยังไม่มีชุมนุม</span>`;
+                            actionBtnHtml = `
+                                <button onclick="addStudent('${s.student_id}', '${escapedName}', '')" 
+                                        class="btn-action-add">
+                                    <i class="fas fa-plus"></i> เพิ่มเข้า
+                                </button>
+                            `;
+                        }
+
+                        return `
+                            <div class="autocomplete-item">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="avatar-badge">
+                                        ${s.number ? s.number : s.student_id.slice(-2)}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="font-black text-gray-800 dark:text-white text-sm truncate">${s.fullname}</span>
+                                            <span class="font-mono text-xs text-blue-600 dark:text-blue-400 font-bold">(${s.student_id})</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 font-bold">${s.class_name}</span>
+                                            ${badgeHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    ${actionBtnHtml}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    results.classList.remove('hidden');
+                } else {
+                    results.innerHTML = `
+                        <div class="p-6 text-center text-gray-400 dark:text-gray-500 font-bold text-sm">
+                            <i class="fas fa-search mb-1 text-lg opacity-40"></i>
+                            <p>ไม่พบข้อมูลนักเรียนที่ค้นหา</p>
+                        </div>
+                    `;
+                    results.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error(err);
+                spinner.classList.add('hidden');
+            }
+        }, 250);
+    });
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('autocomplete-container');
+        if (container && !container.contains(e.target)) {
+            results.classList.add('hidden');
+        }
+    });
+}
+
+function addStudent(studentId, fullname, currentRegisteredClub) {
+    let confirmTitle = 'เพิ่มนักเรียนเข้าชุมนุม?';
+    let confirmText = `ต้องการเพิ่ม ${fullname} เข้าชุมนุมนี้ใช่หรือไม่?`;
+    let confirmBtnText = 'ใช่, เพิ่มเข้าชุมนุม';
+    let confirmBtnColor = '#059669';
+
+    if (currentRegisteredClub) {
+        confirmTitle = 'ยืนยันการย้ายชุมนุม?';
+        confirmText = `${fullname} ปัจจุบันสังกัด "${currentRegisteredClub}" คุณต้องการย้ายมายังชุมนุมนี้ใช่หรือไม่?`;
+        confirmBtnText = 'ใช่, ย้ายชุมนุม';
+        confirmBtnColor = '#f59e0b';
+    }
+
+    Swal.fire({
+        title: confirmTitle,
+        text: confirmText,
+        icon: currentRegisteredClub ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonColor: confirmBtnColor,
+        confirmButtonText: confirmBtnText,
+        cancelButtonText: 'ยกเลิก',
+        customClass: {
+            popup: 'rounded-3xl dark:bg-slate-900',
+            title: 'font-black text-gray-800 dark:text-white',
+            htmlContainer: 'font-bold text-gray-600 dark:text-gray-400'
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const res = await fetch('../controllers/ClubController.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: new URLSearchParams({
+                        action: 'add_member',
+                        student_id: studentId,
+                        club_id: currentClubId
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: data.message || 'เพิ่มสำเร็จ!',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        customClass: { popup: 'rounded-3xl dark:bg-slate-900' }
+                    });
+                    clearStudentSearch();
+                    // Refresh modal list
+                    const modalTitle = document.getElementById('members-modal-title').textContent.replace('จัดการสมาชิก - ', '');
+                    manageMembers(currentClubId, modalTitle, '', '');
+                    // Refresh main list stats
+                    loadData();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ไม่สามารถดำเนินการได้',
+                        text: data.message || 'เกิดข้อผิดพลาด',
+                        customClass: { popup: 'rounded-3xl dark:bg-slate-900' }
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้',
+                    customClass: { popup: 'rounded-3xl dark:bg-slate-900' }
+                });
+            }
+        }
+    });
+}
+
 // Close modal when clicking outside
 document.getElementById('members-modal').addEventListener('click', function(e) {
     if (e.target === this) {
@@ -562,6 +801,7 @@ document.getElementById('members-modal').addEventListener('click', function(e) {
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
+    initStudentAutocomplete();
     
     // Search Event
     document.getElementById('club-search').addEventListener('input', filterData);
@@ -602,4 +842,142 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* Animation tweaks */
 .animate__animated { animation-duration: 0.6s; }
+
+/* Autocomplete Badges */
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 800;
+}
+.badge-current {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+.dark .badge-current {
+    background-color: rgba(30, 58, 138, 0.4);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-transfer {
+    background-color: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+.dark .badge-transfer {
+    background-color: rgba(120, 53, 15, 0.4);
+    color: #fcd34d;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-new {
+    background-color: #d1fae5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+.dark .badge-new {
+    background-color: rgba(6, 78, 59, 0.4);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-member {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    font-size: 11px;
+}
+.dark .badge-member {
+    background-color: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #334155;
+}
+
+/* Autocomplete Action Buttons */
+.btn-action-add {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+.btn-action-add:hover {
+    background: linear-gradient(135deg, #047857, #065f46);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+}
+.btn-action-add:active {
+    transform: scale(0.95);
+}
+
+.btn-action-transfer {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+.btn-action-transfer:hover {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+.btn-action-transfer:active {
+    transform: scale(0.95);
+}
+
+/* Autocomplete Item Container Hover in Dark/Light Mode */
+.autocomplete-item {
+    padding: 0.875rem;
+    transition: background-color 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+.autocomplete-item:hover {
+    background-color: rgba(59, 130, 246, 0.08);
+}
+.dark .autocomplete-item:hover {
+    background-color: rgba(51, 65, 85, 0.5);
+}
+
+.avatar-badge {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    background-color: #dbeafe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+.dark .avatar-badge {
+    background-color: rgba(30, 58, 138, 0.4);
+    color: #93c5fd;
+}
 </style>
