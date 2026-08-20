@@ -20,7 +20,8 @@ try {
     $users = new DatabaseUsers();
     
     $term = \TermPee::getCurrent();
-    $year = (int)$term->pee;
+    $currentYear = $term ? (int)$term->pee : (int)date('Y') + 543;
+    $year = isset($_GET['year']) && (int)$_GET['year'] > 2000 ? (int)$_GET['year'] : $currentYear;
     $level = isset($_GET['level']) ? (int)$_GET['level'] : 1;
 
     // Check which registration table exists

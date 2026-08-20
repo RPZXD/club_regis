@@ -29,11 +29,8 @@ try {
     }
     
     $term = \TermPee::getCurrent();
-    if (!$term) {
-        throw new Exception('Cannot get current term');
-    }
-    
-    $year = (int)$term->pee;
+    $currentYear = $term ? (int)$term->pee : (int)date('Y') + 543;
+    $year = isset($_GET['year']) && (int)$_GET['year'] > 2000 ? (int)$_GET['year'] : $currentYear;
     if (!$year || $year < 2020) {
         throw new Exception('Invalid year: ' . $year);
     }

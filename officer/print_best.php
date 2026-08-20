@@ -23,11 +23,9 @@ $pdo = $db->getPDO();
 $bestModel = new BestActivity($pdo);
 $dbUsers = new DatabaseUsers();
 
-$termPee = \TermPee::getCurrent();
-$year = $termPee->pee;
-
 $activity = $bestModel->getById($id);
-if (!$activity || intval($activity['year']) !== intval($year)) { echo 'ไม่พบกิจกรรมปีนี้'; exit; }
+if (!$activity) { echo 'ไม่พบกิจกรรม'; exit; }
+$year = intval($activity['year']);
 
 // fetch members and enrich with student data
 $members = $bestModel->listMembers($id, $year);

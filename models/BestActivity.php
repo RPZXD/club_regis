@@ -123,6 +123,25 @@ class BestActivity
         }
     }
 
+    // Get all distinct years from activities and members
+    public function getDistinctYears()
+    {
+        try {
+            $stmt = $this->pdo->query("
+                SELECT DISTINCT year FROM (
+                    SELECT year FROM best_activities WHERE year IS NOT NULL AND year > 0
+                    UNION 
+                    SELECT year FROM best_members WHERE year IS NOT NULL AND year > 0
+                ) as t 
+                ORDER BY year DESC
+            ");
+            $years = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            return $years ? array_map('intval', $years) : [];
+        } catch (PDOException $e) {
+            return [];
+        }
+    }
+
     // Optimized getAll with better caching
     public function getAll($year)
     {

@@ -22,7 +22,8 @@ $startTime = microtime(true);
         $pdo = $club->getPDO();
         $users = new DatabaseUsers();
         $term = \TermPee::getCurrent();
-        $year = (int)$term->pee;
+        $currentYear = $term ? (int)$term->pee : (int)date('Y') + 543;
+        $year = isset($_GET['year']) && (int)$_GET['year'] > 2000 ? (int)$_GET['year'] : $currentYear;
         $level = isset($_GET['level']) ? (int)$_GET['level'] : 1; // 1..6
 
         // Validate level input
@@ -33,10 +34,6 @@ $startTime = microtime(true);
         // Check connections
         if (!$pdo) {
             throw new Exception('Club database connection failed');
-        }
-        
-        if (!$term) {
-            throw new Exception('Cannot get current term');
         }
         
         if (!$year || $year < 2020) {
@@ -66,31 +63,36 @@ $startTime = microtime(true);
             throw new Exception('No member registration table found (best_regis or best_members)');
         }
 
-        // Simple approach: get activities first, then count registrations by level
+        // 1. Get activities for the requested year
         $activityStmt = $pdo->prepare("SELECT id, name FROM best_activities WHERE year = ? ORDER BY name");
         $activityStmt->execute([$year]);
         $activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // 2. Get students in this level from student database
+        $stuStmt = $users->query("SELECT Stu_id FROM student WHERE Stu_major = ? AND Stu_status = '1'", [$level]);
+        $levelStuIds = $stuStmt ? $stuStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        $levelStuSet = array_flip($levelStuIds);
+
+        // 3. Get all registrations for this year
+        $regStmt = $pdo->prepare("SELECT {$memberActivityColumn} as act_id, {$memberIdColumn} as stu_id FROM {$memberTable} WHERE year = ?");
+        $regStmt->execute([$year]);
+        $allRegs = $regStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $actCounts = [];
+        foreach ($allRegs as $r) {
+            $aid = $r['act_id'];
+            $sid = (string)$r['stu_id'];
+            if (isset($levelStuSet[$sid]) || (empty($levelStuIds) && substr($sid, 0, 1) === (string)$level)) {
+                $actCounts[$aid] = ($actCounts[$aid] ?? 0) + 1;
+            }
+        }
+
         $out = [];
-        
         foreach ($activities as $activity) {
-            // Count registrations for this activity by students in the specified level
-            // Assuming student IDs start with level number (e.g., 1xxxxx for ม.1)
-            $countStmt = $pdo->prepare("
-                SELECT COUNT(*) as count 
-                FROM {$memberTable} 
-                WHERE {$memberActivityColumn} = ? 
-                AND year = ? 
-                AND SUBSTRING({$memberIdColumn}, 1, 1) = ?
-            ");
-            
-            $countStmt->execute([$activity['id'], $year, (string)$level]);
-            $count = $countStmt->fetchColumn();
-            
             $out[] = [
                 'id' => (int)$activity['id'],
                 'name' => $activity['name'],
-                'count' => (int)$count
+                'count' => (int)($actCounts[$activity['id']] ?? 0)
             ];
         }
 

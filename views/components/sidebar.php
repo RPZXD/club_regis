@@ -21,7 +21,7 @@ $menuItems = [
     ],
     [
         'key' => 'best_list',
-        'name' => 'Best For Teen 2025',
+        'name' => 'Best For Teen',
         'url' => 'best_list.php',
         'icon' => 'fa-trophy',
         'gradient' => ['from' => 'amber-500', 'to' => 'orange-600'],
