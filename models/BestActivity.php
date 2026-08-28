@@ -400,6 +400,7 @@ class BestActivity
             $this->clearCache('member_count');
             $this->clearCache('members_list');
             $this->clearCache('activities_with_counts');
+            $this->clearCache('student_registration_' . $student_id . '_' . $year);
         }
         
         return $result;
@@ -419,6 +420,7 @@ class BestActivity
             $this->clearCache('member_count');
             $this->clearCache('members_list');
             $this->clearCache('activities_with_counts');
+            $this->clearCache('student_registration_' . $student_id . '_' . $year);
         }
         
         return $result;

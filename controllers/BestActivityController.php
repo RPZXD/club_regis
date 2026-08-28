@@ -389,19 +389,59 @@ switch ($action) {
         echo json_encode(['success' => $ok]);
         exit;
 
+    case 'cancel':
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'นักเรียน' || !isset($_SESSION['user']['Stu_id'])) {
+            jsonError('unauthorized - กรุณาเข้าสู่ระบบใหม่');
+        }
+
+        $student_id = $_SESSION['user']['Stu_id'];
+        $stu = $dbUsers->getStudentByUsername($student_id);
+        if (!$stu) {
+            jsonError('ไม่พบข้อมูลนักเรียน');
+        }
+
+        $stuGrade = 'ม.' . $stu['Stu_major'];
+        $timeValidation = checkRegistrationTime($stuGrade);
+        if (!$timeValidation['valid']) {
+            jsonError('ไม่สามารถยกเลิกการสมัครได้: ' . $timeValidation['message']);
+        }
+
+        $existing = $bestModel->getStudentRegistration($student_id, $current_year);
+        if (!$existing) {
+            jsonError('ไม่พบประวัติการสมัครกิจกรรมในปีนี้');
+        }
+
+        $actId = intval($existing['id'] ?? $existing['activity_id']);
+        $ok = $bestModel->removeMember($actId, $student_id, $current_year);
+        if ($ok) {
+            $bestModel->clearActivityCache($actId, $current_year);
+            echo json_encode([
+                'success' => true,
+                'message' => 'ยกเลิกการสมัครกิจกรรม "' . ($existing['name'] ?? '') . '" เรียบร้อยแล้ว'
+            ]);
+        } else {
+            jsonError('ไม่สามารถยกเลิกการสมัครได้');
+        }
+        exit;
+
     case 'my_status':
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'นักเรียน' || !isset($_SESSION['user']['Stu_id'])) {
             jsonError('unauthorized');
         }
         
         $sid = $_SESSION['user']['Stu_id'];
-        $stmt = $pdo->prepare("SELECT bm.activity_id, bm.created_at, ba.name, ba.grade_levels, ba.max_members
+        $stmt = $pdo->prepare("SELECT bm.activity_id, bm.created_at, ba.name, ba.grade_levels, ba.max_members, ba.description
                                FROM best_members bm
                                JOIN best_activities ba ON ba.id = bm.activity_id
                                WHERE bm.student_id = :sid AND bm.year = :year");
         $stmt->execute(['sid' => $sid, 'year' => $current_year]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        echo json_encode(['success' => true, 'registered' => !!$row, 'data' => $row]);
+        echo json_encode([
+            'success' => true, 
+            'registered' => !!$row, 
+            'data' => $row,
+            'year' => $current_year
+        ]);
         exit;
 
     default:

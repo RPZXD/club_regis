@@ -7,9 +7,13 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'นักเรี�
 $user = $_SESSION['user'];
 $stu_grade = 'ม.' . ($user['Stu_major'] ?? '');
 
-// Load config
+// Load config & Term
+require_once __DIR__ . '/../models/TermPee.php';
 $config = json_decode(file_get_contents('../config.json'), true);
 $global = $config['global'];
+
+$termPee = \TermPee::getCurrent();
+$current_year = intval($termPee ? $termPee->pee : (date('Y') + 543));
 
 // Check registration time settings
 $best_setting_file = '../best_regis_setting.json';
