@@ -498,6 +498,12 @@ function renderChart(data) {
         return;
     }
 
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+    const remainingBg = isDark ? 'rgba(51, 65, 85, 0.6)' : 'rgba(226, 232, 240, 0.85)';
+    const legendColor = isDark ? '#e2e8f0' : '#334155';
+
     bestChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -512,7 +518,7 @@ function renderChart(data) {
                 { 
                     label: 'คงเหลือ', 
                     data: top.map(a => Math.max(0, parseInt(a.max_members || 0) - parseInt(a.current_members_count || 0))), 
-                    backgroundColor: 'rgba(226, 232, 240, 0.85)', 
+                    backgroundColor: remainingBg, 
                     borderRadius: 8 
                 }
             ]
@@ -521,11 +527,26 @@ function renderChart(data) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'bottom', labels: { font: { weight: 'bold', family: 'Prompt, sans-serif' } } }
+                legend: { 
+                    position: 'bottom', 
+                    labels: { 
+                        color: legendColor,
+                        font: { weight: 'bold', family: 'Mali, Prompt, sans-serif' } 
+                    } 
+                }
             },
             scales: {
-                x: { stacked: true, grid: { display: false } },
-                y: { stacked: true, beginAtZero: true }
+                x: { 
+                    stacked: true, 
+                    grid: { display: false },
+                    ticks: { color: textColor, font: { family: 'Mali, sans-serif' } }
+                },
+                y: { 
+                    stacked: true, 
+                    beginAtZero: true,
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { family: 'Mali, sans-serif' } }
+                }
             }
         }
     });
@@ -1029,6 +1050,21 @@ document.getElementById('best-form').addEventListener('submit', async function(e
     }
 });
 
-document.addEventListener('DOMContentLoaded', loadData);
+document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+
+    window.addEventListener('themeChanged', () => {
+        if (activitiesData && activitiesData.length > 0) {
+            renderChart([...activitiesData]);
+        }
+    });
+
+    const observer = new MutationObserver(() => {
+        if (activitiesData && activitiesData.length > 0) {
+            renderChart([...activitiesData]);
+        }
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+});
 </script>
 

@@ -199,7 +199,9 @@ $global = $config['global'];
         // Dark mode toggle
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
-            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('darkMode', isDark);
+            window.dispatchEvent(new CustomEvent('themeChanged', { detail: { isDark } }));
         }
         
         // Check for saved dark mode preference

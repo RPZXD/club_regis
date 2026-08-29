@@ -298,6 +298,13 @@ function renderChart(list) {
     const chartEl = document.getElementById('best-chart');
     if (!chartEl) return;
     
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+    const remainingBg = isDark ? 'rgba(51, 65, 85, 0.6)' : 'rgba(226, 232, 240, 0.8)';
+    const remainingBorder = isDark ? 'rgba(71, 85, 105, 0.8)' : 'rgba(203, 213, 225, 1)';
+    const legendColor = isDark ? '#e2e8f0' : '#334155';
+
     const ordered = [...list].sort((a, b) => (parseInt(b.current_members_count || 0) - parseInt(a.current_members_count || 0)));
     const top = ordered.slice(0, 10);
     const labels = top.map(a => (a.name || ('กิจกรรม #' + a.id)).substring(0, 14));
@@ -324,8 +331,8 @@ function renderChart(list) {
                 { 
                     label: 'คงเหลือ (ที่นั่ง)', 
                     data: remaining, 
-                    backgroundColor: 'rgba(203, 213, 225, 0.5)',
-                    borderColor: 'rgba(203, 213, 225, 0.8)',
+                    backgroundColor: remainingBg,
+                    borderColor: remainingBorder,
                     borderWidth: 1,
                     borderRadius: 8
                 }
@@ -338,6 +345,7 @@ function renderChart(list) {
                 legend: { 
                     position: 'bottom',
                     labels: {
+                        color: legendColor,
                         font: { family: 'Mali', size: 12, weight: 'bold' },
                         usePointStyle: true,
                         boxWidth: 8
@@ -349,6 +357,7 @@ function renderChart(list) {
                     stacked: true,
                     grid: { display: false },
                     ticks: {
+                        color: textColor,
                         font: { family: 'Mali', size: 10, weight: 'bold' },
                         maxRotation: 30,
                         minRotation: 30
@@ -357,8 +366,8 @@ function renderChart(list) {
                 y: { 
                     stacked: true, 
                     beginAtZero: true,
-                    grid: { color: 'rgba(156, 163, 175, 0.15)' },
-                    ticks: { font: { family: 'Mali', size: 10 } }
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { family: 'Mali', size: 10 } }
                 }
             }
         }
@@ -549,6 +558,20 @@ document.addEventListener('DOMContentLoaded', function() {
             applyFilters();
         });
     });
+
+    // Theme change listener for Chart.js
+    window.addEventListener('themeChanged', () => {
+        if (allBestData && allBestData.length > 0) {
+            renderChart(allBestData);
+        }
+    });
+
+    const observer = new MutationObserver(() => {
+        if (allBestData && allBestData.length > 0) {
+            renderChart(allBestData);
+        }
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 });
 </script>
 
