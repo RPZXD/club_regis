@@ -18,19 +18,22 @@
 
         <!-- Academic Year Dropdown & Refresh -->
         <div class="flex items-center gap-3 flex-wrap">
-            <div class="flex items-center gap-2 glass rounded-2xl px-3.5 py-2.5 border border-white/50 dark:border-white/10 shadow-sm">
+            <div class="flex items-center gap-2 bg-white/80 dark:bg-slate-800 rounded-2xl px-3.5 py-2.5 border border-gray-200/80 dark:border-slate-700 shadow-sm backdrop-blur-md">
                 <i class="fas fa-calendar-alt text-amber-500 text-sm"></i>
                 <label for="year-select" class="text-xs font-black text-gray-700 dark:text-gray-200 whitespace-nowrap">ปีการศึกษา:</label>
-                <select id="year-select" class="bg-transparent font-black text-sm text-gray-800 dark:text-white focus:outline-none cursor-pointer">
-                    <?php foreach ($available_years as $y): ?>
-                    <option value="<?= $y ?>" <?= $y == $current_year ? 'selected' : '' ?> class="bg-white text-gray-800 dark:bg-slate-900 dark:text-white">
-                        <?= $y ?> <?= $y == $current_year ? '(ปัจจุบัน)' : '' ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="relative flex items-center">
+                    <select id="year-select" class="appearance-none bg-transparent font-black text-sm text-gray-800 dark:text-white focus:outline-none cursor-pointer pr-6">
+                        <?php foreach ($available_years as $y): ?>
+                        <option value="<?= $y ?>" <?= $y == $current_year ? 'selected' : '' ?> class="bg-white text-gray-800 dark:bg-slate-900 dark:text-white">
+                            <?= $y ?> <?= $y == $current_year ? '(ปัจจุบัน)' : '' ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-0 text-[10px] text-gray-400 pointer-events-none"></i>
+                </div>
             </div>
 
-            <button id="best-refresh" class="p-3 rounded-2xl glass text-amber-600 dark:text-amber-400 shadow-sm border border-white/50 dark:border-white/10 hover:shadow-md transition-all active:scale-95" title="รีเฟรชข้อมูล">
+            <button id="best-refresh" class="p-3 rounded-2xl bg-white/80 dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm border border-gray-200/80 dark:border-slate-700 hover:shadow-md transition-all active:scale-95 backdrop-blur-md" title="รีเฟรชข้อมูล">
                 <i class="fas fa-sync-alt" id="refresh-icon"></i>
             </button>
         </div>

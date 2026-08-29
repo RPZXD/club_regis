@@ -91,6 +91,19 @@ $global = $config['global'];
             background: rgba(30, 41, 59, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
+        /* Form Controls Dark Mode */
+        select, input, textarea {
+            color-scheme: light dark;
+        }
+        .dark select {
+            background-color: #1e293b;
+            color: #f8fafc;
+        }
+        .dark select option {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+        }
         
         /* Gradient Text */
         .gradient-text {

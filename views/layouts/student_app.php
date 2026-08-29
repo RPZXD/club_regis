@@ -61,8 +61,10 @@ $global = $config['global'];
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
         ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #10b981 0%, #059669 100%); border-radius: 4px; }
-        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
         .dark .glass { background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); }
+        select, input, textarea { color-scheme: light dark; }
+        .dark select { background-color: #1e293b; color: #f8fafc; }
+        .dark select option { background-color: #0f172a !important; color: #f8fafc !important; }
         .sidebar-item { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .sidebar-item:hover { transform: translateX(8px); }
         .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
