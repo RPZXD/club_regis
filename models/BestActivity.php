@@ -142,6 +142,12 @@ class BestActivity
         }
     }
 
+    // Alias for getDistinctYears
+    public function getAvailableYears()
+    {
+        return $this->getDistinctYears();
+    }
+
     // Optimized getAll with better caching
     public function getAll($year)
     {

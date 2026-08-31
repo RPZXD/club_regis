@@ -90,9 +90,11 @@ foreach ($students as $stu) {
 }
 
 $studentsJson = json_encode($studentsList, JSON_UNESCAPED_UNICODE);
-$availableYears = $bestModel->getAvailableYears();
+$availableYears = $bestModel->getDistinctYears();
 if (empty($availableYears)) $availableYears = [$current_year];
 if (!in_array($current_year, $availableYears)) array_unshift($availableYears, $current_year);
+if (!in_array($req_year, $availableYears)) array_unshift($availableYears, $req_year);
+$availableYears = array_values(array_unique(array_map('intval', $availableYears)));
 rsort($availableYears);
 ?>
 <!DOCTYPE html>
