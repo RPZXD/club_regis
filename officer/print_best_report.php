@@ -98,7 +98,7 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
 <head>
     <meta charset="UTF-8">
     <title>พิมพ์รายงาน Best For Teen</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=TH+Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -171,17 +171,38 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
             print-color-adjust: exact;
             font-size: inherit !important;
         }
+        .btn-print-primary {
+            background-color: #ea580c !important;
+            background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+            box-shadow: 0 4px 14px 0 rgba(234, 88, 12, 0.4) !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .btn-print-primary:hover {
+            background: linear-gradient(135deg, #d97706 0%, #c2410c 100%) !important;
+            color: #ffffff !important;
+        }
+        .btn-secondary-close {
+            background: #f1f5f9 !important;
+            color: #334155 !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+        .btn-secondary-close:hover {
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
+        }
     </style>
 </head>
 <body class="p-0 m-0">
 
     <!-- Floating Top-Right Print Bar (Always visible) -->
-    <div class="no-print fixed top-4 right-4 z-50 flex items-center gap-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-2 rounded-2xl shadow-2xl border border-slate-200">
-        <button onclick="window.print()" class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black py-2.5 px-5 rounded-xl shadow-lg flex items-center gap-2 text-sm transition-all active:scale-95 cursor-pointer">
+    <div class="no-print fixed top-4 right-4 z-50 flex items-center gap-2 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-2xl border border-slate-300">
+        <button onclick="window.print()" class="btn-print-primary font-black py-2.5 px-5 rounded-xl shadow-lg flex items-center gap-2 text-sm transition-all active:scale-95 cursor-pointer">
             <i class="fas fa-print text-base"></i>
             <span>พิมพ์รายงาน (Print / PDF)</span>
         </button>
-        <button onclick="window.close()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-3.5 rounded-xl text-xs transition-all flex items-center gap-1">
+        <button onclick="window.close()" class="btn-secondary-close font-bold py-2.5 px-3.5 rounded-xl text-xs transition-all flex items-center gap-1 cursor-pointer">
             <i class="fas fa-times"></i>
             <span>ปิด</span>
         </button>
@@ -198,7 +219,7 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
 
         <!-- Primary Top Action Button inside Sidebar -->
         <div class="mb-4">
-            <button onclick="window.print()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black py-3 px-4 rounded-xl shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 text-sm transition-all active:scale-95 cursor-pointer animate__animated animate__pulse">
+            <button onclick="window.print()" class="w-full btn-print-primary font-black py-3 px-4 rounded-xl shadow-xl flex items-center justify-center gap-2 text-sm transition-all active:scale-95 cursor-pointer">
                 <i class="fas fa-print text-lg"></i>
                 <span>พิมพ์รายงาน (Print / PDF)</span>
             </button>
@@ -304,11 +325,11 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
 
         <!-- Action Buttons -->
         <div class="space-y-2">
-            <button onclick="window.print()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 text-sm transition-all active:scale-98">
+            <button onclick="window.print()" class="w-full btn-print-primary font-bold py-2.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 text-sm transition-all active:scale-98 cursor-pointer">
                 <i class="fas fa-print"></i>
                 <span>พิมพ์รายงาน (Print / PDF)</span>
             </button>
-            <button onclick="window.close()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5">
+            <button onclick="window.close()" class="w-full btn-secondary-close font-bold py-2 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                 <i class="fas fa-arrow-left"></i>
                 <span>ย้อนกลับ / ปิดหน้านี้</span>
             </button>
