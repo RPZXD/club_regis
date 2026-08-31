@@ -713,14 +713,14 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
                 sheet.style.fontSize = fontSize;
 
                 let tableHeaders = '';
-                if (colNo) tableHeaders += '<th style="width: 5%; text-align: center;">#</th>';
-                if (colId) tableHeaders += '<th style="width: 14%; text-align: center;">รหัสประจำตัว</th>';
-                if (colNum) tableHeaders += '<th style="width: 7%; text-align: center;">เลขที่</th>';
-                tableHeaders += '<th style="text-align: left;">ชื่อ - นามสกุล</th>';
-                if (colClass) tableHeaders += '<th style="width: 10%; text-align: center;">ชั้น/ห้อง</th>';
-                if (colAct) tableHeaders += '<th style="width: 30%; text-align: left;">กิจกรรม Best For Teen</th>';
-                if (colStatus) tableHeaders += '<th style="width: 12%; text-align: center;">สถานะ</th>';
-                if (colSign) tableHeaders += '<th style="width: 16%; text-align: center;">ช่องลงชื่อ / หมายเหตุ</th>';
+                if (colNo) tableHeaders += '<th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>';
+                if (colId) tableHeaders += '<th style="width: 10%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>';
+                if (colNum) tableHeaders += '<th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>';
+                tableHeaders += '<th style="text-align: center;">ชื่อ - นามสกุล</th>';
+                if (colClass) tableHeaders += '<th style="width: 8%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>';
+                if (colAct) tableHeaders += '<th style="text-align: center;">กิจกรรม Best For Teen</th>';
+                if (colStatus) tableHeaders += '<th style="width: 11%; text-align: center; white-space: nowrap;">สถานะ</th>';
+                if (colSign) tableHeaders += '<th style="width: 15%; text-align: center;">ช่องลงชื่อ / หมายเหตุ</th>';
 
                 let rowsHtml = '';
                 studentsInGroup.forEach((s, idx) => {
@@ -729,7 +729,7 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
                     if (colNo) rowsHtml += `<td style="text-align: center;">${idx + 1}</td>`;
                     if (colId) rowsHtml += `<td style="text-align: center; font-weight: bold;">${s.student_id}</td>`;
                     if (colNum) rowsHtml += `<td style="text-align: center;">${s.number || '-'}</td>`;
-                    rowsHtml += `<td style="font-weight: 600;">${s.fullname}</td>`;
+                    rowsHtml += `<td style="font-weight: 600; white-space: nowrap;">${s.fullname}</td>`;
                     if (colClass) rowsHtml += `<td style="text-align: center;">ม.${s.level}/${s.room}</td>`;
                     if (colAct) rowsHtml += `<td style="font-weight: ${isReg ? 'bold' : 'normal'}; color: ${isReg ? '#000' : '#888'};">${s.activity_name}</td>`;
                     if (colStatus) rowsHtml += `<td style="text-align: center; font-weight: bold; color: ${isReg ? '#047857' : '#b91c1c'};">${isReg ? 'สมัครแล้ว' : 'ยังไม่สมัคร'}</td>`;
@@ -808,37 +808,37 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
                 let tableHeaders = '';
                 if (signFormat === 'dual_time') {
                     tableHeaders = `
-                        <th style="width: 5%; text-align: center;">ลำดับ</th>
-                        <th style="width: 14%; text-align: center;">รหัสประจำตัว</th>
-                        <th style="text-align: left;">ชื่อ - นามสกุล</th>
-                        <th style="width: 9%; text-align: center;">ชั้น/ห้อง</th>
-                        <th style="width: 6%; text-align: center;">เลขที่</th>
-                        <th style="width: 14%; text-align: center;">ลงชื่อมา</th>
-                        <th style="width: 9%; text-align: center;">เวลามา</th>
-                        <th style="width: 14%; text-align: center;">ลงชื่อกลับ</th>
-                        <th style="width: 9%; text-align: center;">เวลากลับ</th>
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
+                        <th style="width: 10%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
+                        <th style="text-align: center;">ชื่อ - นามสกุล</th>
+                        <th style="width: 8%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
+                        <th style="width: 13%; text-align: center;">ลงชื่อมา</th>
+                        <th style="width: 8%; text-align: center;">เวลามา</th>
+                        <th style="width: 13%; text-align: center;">ลงชื่อกลับ</th>
+                        <th style="width: 8%; text-align: center;">เวลากลับ</th>
                     `;
                 } else if (signFormat === 'single_sign') {
                     tableHeaders = `
-                        <th style="width: 5%; text-align: center;">ลำดับ</th>
-                        <th style="width: 15%; text-align: center;">รหัสประจำตัว</th>
-                        <th style="text-align: left;">ชื่อ - นามสกุล</th>
-                        <th style="width: 10%; text-align: center;">ชั้น/ห้อง</th>
-                        <th style="width: 7%; text-align: center;">เลขที่</th>
-                        <th style="width: 22%; text-align: center;">ลายมือชื่อนักเรียน</th>
-                        <th style="width: 18%; text-align: center;">หมายเหตุ</th>
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
+                        <th style="width: 11%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
+                        <th style="text-align: center;">ชื่อ - นามสกุล</th>
+                        <th style="width: 9%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
+                        <th style="width: 20%; text-align: center;">ลายมือชื่อนักเรียน</th>
+                        <th style="width: 14%; text-align: center;">หมายเหตุ</th>
                     `;
                 } else {
                     tableHeaders = `
-                        <th style="width: 5%; text-align: center;">ลำดับ</th>
-                        <th style="width: 15%; text-align: center;">รหัสประจำตัว</th>
-                        <th style="text-align: left;">ชื่อ - นามสกุล</th>
-                        <th style="width: 10%; text-align: center;">ชั้น/ห้อง</th>
-                        <th style="width: 7%; text-align: center;">เลขที่</th>
-                        <th style="width: 8%; text-align: center;">มา</th>
-                        <th style="width: 8%; text-align: center;">ขาด</th>
-                        <th style="width: 8%; text-align: center;">ลา</th>
-                        <th style="width: 16%; text-align: center;">หมายเหตุ</th>
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
+                        <th style="width: 11%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
+                        <th style="text-align: center;">ชื่อ - นามสกุล</th>
+                        <th style="width: 9%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
+                        <th style="width: 7%; text-align: center;">มา</th>
+                        <th style="width: 7%; text-align: center;">ขาด</th>
+                        <th style="width: 7%; text-align: center;">ลา</th>
+                        <th style="width: 14%; text-align: center;">หมายเหตุ</th>
                     `;
                 }
 
@@ -851,7 +851,7 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
                         rowsHtml += '<tr>';
                         rowsHtml += `<td style="text-align: center;">${idx + 1}</td>`;
                         rowsHtml += `<td style="text-align: center; font-weight: bold;">${s.student_id}</td>`;
-                        rowsHtml += `<td style="font-weight: 600;">${s.fullname}</td>`;
+                        rowsHtml += `<td style="font-weight: 600; white-space: nowrap;">${s.fullname}</td>`;
                         rowsHtml += `<td style="text-align: center;">ม.${s.level}/${s.room}</td>`;
                         rowsHtml += `<td style="text-align: center;">${s.number || '-'}</td>`;
                         if (signFormat === 'dual_time') {

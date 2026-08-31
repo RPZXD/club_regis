@@ -293,37 +293,37 @@ $activityJson = json_encode($activity, JSON_UNESCAPED_UNICODE);
             let tableHeaders = '';
             if (signFormat === 'dual_time') {
                 tableHeaders = `
-                    <th style="width: 5%; text-align: center;">ลำดับ</th>
-                    <th style="width: 14%; text-align: center;">รหัสประจำตัว</th>
-                    <th style="text-align: left;">ชื่อ - นามสกุล</th>
-                    <th style="width: 9%; text-align: center;">ชั้น/ห้อง</th>
-                    <th style="width: 6%; text-align: center;">เลขที่</th>
-                    <th style="width: 14%; text-align: center;">ลงชื่อมา</th>
-                    <th style="width: 9%; text-align: center;">เวลามา</th>
-                    <th style="width: 14%; text-align: center;">ลงชื่อกลับ</th>
-                    <th style="width: 9%; text-align: center;">เวลากลับ</th>
+                    <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
+                    <th style="width: 10%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
+                    <th style="text-align: center;">ชื่อ - นามสกุล</th>
+                    <th style="width: 8%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
+                    <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
+                    <th style="width: 13%; text-align: center;">ลงชื่อมา</th>
+                    <th style="width: 8%; text-align: center;">เวลามา</th>
+                    <th style="width: 13%; text-align: center;">ลงชื่อกลับ</th>
+                    <th style="width: 8%; text-align: center;">เวลากลับ</th>
                 `;
             } else if (signFormat === 'single_sign') {
                 tableHeaders = `
-                    <th style="width: 5%; text-align: center;">ลำดับ</th>
-                    <th style="width: 15%; text-align: center;">รหัสประจำตัว</th>
-                    <th style="text-align: left;">ชื่อ - นามสกุล</th>
-                    <th style="width: 10%; text-align: center;">ชั้น/ห้อง</th>
-                    <th style="width: 7%; text-align: center;">เลขที่</th>
-                    <th style="width: 22%; text-align: center;">ลายมือชื่อนักเรียน</th>
-                    <th style="width: 18%; text-align: center;">หมายเหตุ</th>
+                    <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
+                    <th style="width: 11%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
+                    <th style="text-align: center;">ชื่อ - นามสกุล</th>
+                    <th style="width: 9%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
+                    <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
+                    <th style="width: 20%; text-align: center;">ลายมือชื่อนักเรียน</th>
+                    <th style="width: 14%; text-align: center;">หมายเหตุ</th>
                 `;
             } else {
                 tableHeaders = `
-                    <th style="width: 5%; text-align: center;">ลำดับ</th>
-                    <th style="width: 15%; text-align: center;">รหัสประจำตัว</th>
-                    <th style="text-align: left;">ชื่อ - นามสกุล</th>
-                    <th style="width: 10%; text-align: center;">ชั้น/ห้อง</th>
-                    <th style="width: 7%; text-align: center;">เลขที่</th>
-                    <th style="width: 8%; text-align: center;">มา</th>
-                    <th style="width: 8%; text-align: center;">ขาด</th>
-                    <th style="width: 8%; text-align: center;">ลา</th>
-                    <th style="width: 16%; text-align: center;">หมายเหตุ</th>
+                    <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
+                    <th style="width: 11%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
+                    <th style="text-align: center;">ชื่อ - นามสกุล</th>
+                    <th style="width: 9%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
+                    <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
+                    <th style="width: 7%; text-align: center;">มา</th>
+                    <th style="width: 7%; text-align: center;">ขาด</th>
+                    <th style="width: 7%; text-align: center;">ลา</th>
+                    <th style="width: 14%; text-align: center;">หมายเหตุ</th>
                 `;
             }
 
@@ -337,7 +337,7 @@ $activityJson = json_encode($activity, JSON_UNESCAPED_UNICODE);
                     rowsHtml += '<tr>';
                     rowsHtml += `<td style="text-align: center;">${idx + 1}</td>`;
                     rowsHtml += `<td style="text-align: center; font-weight: bold;">${s.student_id}</td>`;
-                    rowsHtml += `<td style="font-weight: 600;">${s.name}</td>`;
+                    rowsHtml += `<td style="font-weight: 600; white-space: nowrap;">${s.name}</td>`;
                     rowsHtml += `<td style="text-align: center;">${className}</td>`;
                     rowsHtml += `<td style="text-align: center;">${s.Stu_no || '-'}</td>`;
                     if (signFormat === 'dual_time') {
