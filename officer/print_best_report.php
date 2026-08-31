@@ -196,18 +196,6 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
 </head>
 <body class="p-0 m-0">
 
-    <!-- Floating Top-Right Print Bar (Always visible) -->
-    <div class="no-print fixed top-4 right-4 z-50 flex items-center gap-2 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-2xl border border-slate-300">
-        <button onclick="window.print()" class="btn-print-primary font-black py-2.5 px-5 rounded-xl shadow-lg flex items-center gap-2 text-sm transition-all active:scale-95 cursor-pointer">
-            <i class="fas fa-print text-base"></i>
-            <span>พิมพ์รายงาน (Print / PDF)</span>
-        </button>
-        <button onclick="window.close()" class="btn-secondary-close font-bold py-2.5 px-3.5 rounded-xl text-xs transition-all flex items-center gap-1 cursor-pointer">
-            <i class="fas fa-times"></i>
-            <span>ปิด</span>
-        </button>
-    </div>
-
     <!-- Control Panel (Sidebar) -->
     <div class="control-panel no-print bg-white p-5 rounded-2xl shadow-2xl border border-slate-200">
         <div class="flex items-center justify-between border-b pb-3 mb-4">
@@ -215,14 +203,6 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
                 <i class="fas fa-print text-amber-500"></i>
                 ตั้งค่าพิมพ์รายงาน
             </h3>
-        </div>
-
-        <!-- Primary Top Action Button inside Sidebar -->
-        <div class="mb-4">
-            <button onclick="window.print()" class="w-full btn-print-primary font-black py-3 px-4 rounded-xl shadow-xl flex items-center justify-center gap-2 text-sm transition-all active:scale-95 cursor-pointer">
-                <i class="fas fa-print text-lg"></i>
-                <span>พิมพ์รายงาน (Print / PDF)</span>
-            </button>
         </div>
 
         <!-- Select Report Type -->
