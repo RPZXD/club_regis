@@ -354,11 +354,11 @@ $activityJson = json_encode($activity, JSON_UNESCAPED_UNICODE);
             let sigHtml = '';
             if (showSig) {
                 sigHtml = `
-                    <div style="margin-top: 25px; display: flex; justify-content: flex-end; page-break-inside: avoid;">
-                        <div style="text-align: center; width: 280px; font-size: 0.95em;">
-                            <p style="margin-bottom: 40px;">ลงชื่อ..............................................................ครูผู้รับผิดชอบ</p>
-                            <p>(..............................................................)</p>
-                            <p style="margin-top: 4px;">วันที่ ..... เดือน .................... พ.ศ. .........</p>
+                    <div style="margin-top: 15px; display: flex; justify-content: flex-end; page-break-inside: avoid;">
+                        <div style="text-align: center; width: 280px; font-size: 0.95em; line-height: 1.5;">
+                            <p style="margin: 0 0 4px 0;">ลงชื่อ..............................................................ครูผู้รับผิดชอบ</p>
+                            <p style="margin: 0 0 4px 0;">(..............................................................)</p>
+                            <p style="margin: 0;">วันที่ ..... เดือน .................... พ.ศ. .........</p>
                         </div>
                     </div>
                 `;
