@@ -32,8 +32,10 @@ class LoginController
                 $_SESSION['user'] = [
                     'Teach_id' => $user['Teach_id'],
                     'Teach_name' => $user['Teach_name'],
-                    'role_edoc' => $user['role_edoc'],
-                    'Teach_photo' => $user['Teach_photo'],
+                    'role_edoc' => $user['role_edoc'] ?? '',
+                    'Teach_class' => $user['Teach_class'] ?? '',
+                    'Teach_room' => $user['Teach_room'] ?? '',
+                    'Teach_photo' => $user['Teach_photo'] ?? '',
                 ];
             }
             // เพิ่มเก็บ term pee ลง session

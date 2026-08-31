@@ -6,15 +6,35 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['rol
 }
 
 require_once __DIR__ . '/../classes/DatabaseClub.php';
+require_once __DIR__ . '/../classes/DatabaseUsers.php';
 require_once __DIR__ . '/../models/BestActivity.php';
 require_once __DIR__ . '/../models/TermPee.php';
 
 use App\DatabaseClub;
+use App\DatabaseUsers;
 use App\Models\BestActivity;
 
 $dbClub = new DatabaseClub();
 $pdoClub = $dbClub->getPDO();
 $bestActivityModel = new BestActivity($pdoClub, false);
+
+$dbUsers = new DatabaseUsers();
+$teacherUsername = $_SESSION['username'] ?? '';
+$teacherInfo = $dbUsers->getTeacherByUsername($teacherUsername);
+
+$teach_class_raw = $teacherInfo['Teach_class'] ?? ($_SESSION['user']['Teach_class'] ?? '');
+$teach_room_raw = $teacherInfo['Teach_room'] ?? ($_SESSION['user']['Teach_room'] ?? '');
+
+// Parse teacher assigned classroom
+$assigned_level = 1;
+if ($teach_class_raw) {
+    if (preg_match('/(\d+)/', $teach_class_raw, $m)) {
+        $assigned_level = (int)$m[1];
+        if ($assigned_level < 1 || $assigned_level > 6) $assigned_level = 1;
+    }
+}
+$assigned_room = !empty($teach_room_raw) ? trim($teach_room_raw) : '1';
+$has_assigned_room = (!empty($teach_class_raw) && !empty($teach_room_raw));
 
 $termPee = TermPee::getCurrent();
 $current_year = (int)($termPee ? $termPee->pee : (date('Y') + 543));

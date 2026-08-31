@@ -58,6 +58,18 @@
 
 <!-- Classroom Filter & Print Action Box -->
 <div class="glass rounded-3xl p-5 md:p-6 mb-6 shadow-sm border border-white/40 dark:border-white/10 space-y-4">
+    <?php if ($has_assigned_room): ?>
+    <div class="flex items-center justify-between p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-300 text-xs font-black">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-chalkboard-teacher text-amber-500 text-sm"></i>
+            <span>ห้องประจำชั้นของคุณครู: <b class="underline font-black text-amber-600 dark:text-amber-400">ม.<?= $assigned_level ?>/<?= $assigned_room ?></b></span>
+        </div>
+        <button onclick="goToMyRoom()" class="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black transition-all shadow-sm">
+            เลือกห้องประจำชั้นฉัน
+        </button>
+    </div>
+    <?php endif; ?>
+
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <!-- Level & Room Selectors -->
         <div class="flex flex-wrap items-center gap-3">
@@ -65,7 +77,7 @@
             <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
                 <span class="text-xs font-black text-gray-500 dark:text-gray-400 mr-1 whitespace-nowrap">ระดับชั้น:</span>
                 <?php for ($i = 1; $i <= 6; $i++): ?>
-                <button type="button" class="level-chip px-3.5 py-2 rounded-xl text-xs font-black transition-all <?= $i === 1 ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-slate-700/80 hover:bg-amber-50 dark:hover:bg-slate-700' ?>" data-level="<?= $i ?>">
+                <button type="button" class="level-chip px-3.5 py-2 rounded-xl text-xs font-black transition-all <?= $i === $assigned_level ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-slate-700/80 hover:bg-amber-50 dark:hover:bg-slate-700' ?>" data-level="<?= $i ?>">
                     ม.<?= $i ?>
                 </button>
                 <?php endfor; ?>
@@ -78,7 +90,7 @@
                 <label for="room-select" class="text-xs font-black text-gray-500 dark:text-gray-400 whitespace-nowrap">ห้องเรียน:</label>
                 <div class="relative inline-flex items-center">
                     <select id="room-select" class="bg-white dark:bg-slate-800 text-gray-800 dark:text-white font-black text-xs md:text-sm px-3.5 py-2 pr-7 rounded-xl border border-gray-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm cursor-pointer appearance-none">
-                        <option value="1">ห้อง 1</option>
+                        <option value="<?= $assigned_room ?>">ห้อง <?= $assigned_room ?></option>
                     </select>
                     <i class="fas fa-chevron-down absolute right-2.5 text-[10px] text-gray-400 pointer-events-none"></i>
                 </div>
@@ -87,7 +99,7 @@
 
         <!-- Print Action Button -->
         <div class="flex items-center gap-2 shrink-0">
-            <a id="btn-print-room" href="print_best_room.php?level=1&room=1&year=<?= $current_year ?>" target="_blank" 
+            <a id="btn-print-room" href="print_best_room.php?level=<?= $assigned_level ?>&room=<?= $assigned_room ?>&year=<?= $current_year ?>" target="_blank" 
                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs md:text-sm font-black shadow-lg shadow-amber-500/30 transition-all active:scale-95">
                 <i class="fas fa-print"></i>
                 <span>พิมพ์รายชื่อห้องนี้</span>
@@ -219,9 +231,11 @@
 
 <script>
 const defaultCurrentYear = <?= $current_year ?>;
+const teacherAssignedLevel = <?= json_encode($assigned_level) ?>;
+const teacherAssignedRoom = <?= json_encode((string)$assigned_room) ?>;
 let selectedYear = defaultCurrentYear;
-let selectedLevel = 1;
-let selectedRoom = '1';
+let selectedLevel = teacherAssignedLevel;
+let selectedRoom = teacherAssignedRoom;
 let currentStudentsList = [];
 let selectedStatusFilter = 'all';
 
@@ -229,6 +243,23 @@ function resetToCurrentYear() {
     document.getElementById('year-select').value = defaultCurrentYear;
     selectedYear = defaultCurrentYear;
     loadStudents();
+}
+
+function goToMyRoom() {
+    selectedLevel = teacherAssignedLevel;
+    selectedRoom = teacherAssignedRoom;
+    document.querySelectorAll('.level-chip').forEach(b => {
+        if (parseInt(b.dataset.level) === selectedLevel) {
+            b.className = 'level-chip px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-amber-500 text-white shadow-md shadow-amber-500/20';
+        } else {
+            b.className = 'level-chip px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-slate-700/80 hover:bg-amber-50 dark:hover:bg-slate-700';
+        }
+    });
+    loadRoomsForLevel(selectedLevel).then(() => {
+        const roomSelect = document.getElementById('room-select');
+        if (roomSelect) roomSelect.value = selectedRoom;
+        loadStudents();
+    });
 }
 
 function updatePrintLink() {

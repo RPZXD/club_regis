@@ -27,8 +27,21 @@ $current_year = (int)($termPee ? $termPee->pee : (date('Y') + 543));
 $config = json_decode(file_get_contents('../config.json'), true);
 $global = $config['global'];
 
-$level = $_GET['level'] ?? '1';
-$room = $_GET['room'] ?? '1';
+// Fetch teacher info from database
+$teacherUsername = $_SESSION['username'] ?? '';
+$teacherInfo = $dbUsers->getTeacherByUsername($teacherUsername);
+$teacherName = $teacherInfo['Teach_name'] ?? ($_SESSION['user']['Teach_name'] ?? 'ครูที่ปรึกษา');
+$teach_class_raw = $teacherInfo['Teach_class'] ?? ($_SESSION['user']['Teach_class'] ?? '');
+$teach_room_raw = $teacherInfo['Teach_room'] ?? ($_SESSION['user']['Teach_room'] ?? '');
+
+$default_teacher_level = 1;
+if ($teach_class_raw && preg_match('/(\d+)/', $teach_class_raw, $m)) {
+    $default_teacher_level = (int)$m[1];
+}
+$default_teacher_room = !empty($teach_room_raw) ? trim($teach_room_raw) : '1';
+
+$level = $_GET['level'] ?? (string)$default_teacher_level;
+$room = $_GET['room'] ?? (string)$default_teacher_room;
 $req_year = isset($_GET['year']) && intval($_GET['year']) > 0 ? intval($_GET['year']) : $current_year;
 
 // Normalize level
@@ -301,6 +314,7 @@ rsort($availableYears);
     <script>
         const allStudents = <?= $studentsJson ?>;
         const schoolName = <?= json_encode($global['nameschool'] ?? 'โรงเรียนพิชัย') ?>;
+        const teacherName = <?= json_encode($teacherName) ?>;
         const initialLevel = <?= json_encode($init_level) ?>;
         const initialRoom = <?= json_encode($init_room) ?>;
         let selectedYear = <?= json_encode($req_year) ?>;
@@ -493,8 +507,8 @@ rsort($availableYears);
                     <!-- Signature Footer -->
                     <div style="margin-top: 25px; display: flex; justify-content: space-between; font-size: 0.9em; line-height: 1.5; page-break-inside: avoid; break-inside: avoid;">
                         <div style="text-align: center; width: 45%;">
-                            <p style="margin-bottom: 35px;">ลงชื่อ............................................................ครูที่ปรึกษา</p>
-                            <p>(............................................................)</p>
+                            <p style="margin-bottom: 35px;">ลงชื่อ............................................................ครูประจำชั้น / ครูที่ปรึกษา</p>
+                            <p>( ${teacherName} )</p>
                             <p>วันที่ ......./......./.......</p>
                         </div>
                         <div style="text-align: center; width: 45%;">

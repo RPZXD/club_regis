@@ -170,9 +170,9 @@ switch ($action) {
             $stmt = $dbUsers->query("
                 SELECT DISTINCT Stu_room 
                 FROM student 
-                WHERE Stu_status = '1' AND Stu_major = :level 
+                WHERE Stu_status = '1' AND (Stu_major = :level OR Stu_major = :level_thai)
                 ORDER BY CAST(Stu_room AS UNSIGNED) ASC
-            ", ['level' => $level]);
+            ", ['level' => $level, 'level_thai' => "ม.{$level}"]);
             $rooms = $stmt->fetchAll(PDO::FETCH_COLUMN);
             
             echo json_encode([
@@ -192,13 +192,13 @@ switch ($action) {
             if ($level < 1 || $level > 6) $level = 1;
             $room = isset($_GET['room']) ? trim($_GET['room']) : '';
 
-            // 1. Fetch available rooms for this level
+            // 1. Fetch available rooms for this level (from student table: Stu_major & Stu_room)
             $roomStmt = $dbUsers->query("
                 SELECT DISTINCT Stu_room 
                 FROM student 
-                WHERE Stu_status = '1' AND Stu_major = :level 
+                WHERE Stu_status = '1' AND (Stu_major = :level OR Stu_major = :level_thai)
                 ORDER BY CAST(Stu_room AS UNSIGNED) ASC
-            ", ['level' => $level]);
+            ", ['level' => $level, 'level_thai' => "ม.{$level}"]);
             $availableRooms = $roomStmt->fetchAll(PDO::FETCH_COLUMN);
 
             // Default to first room if not specified or invalid
@@ -206,9 +206,9 @@ switch ($action) {
                 $room = $availableRooms[0];
             }
 
-            // 2. Fetch students in this level & room
-            $conditions = ["Stu_status = '1'", "Stu_major = :level"];
-            $params = ['level' => $level];
+            // 2. Fetch students in this level & room (from student table)
+            $conditions = ["Stu_status = '1'", "(Stu_major = :level OR Stu_major = :level_thai)"];
+            $params = ['level' => $level, 'level_thai' => "ม.{$level}"];
 
             if ($room !== '' && $room !== 'all') {
                 $conditions[] = "Stu_room = :room";
