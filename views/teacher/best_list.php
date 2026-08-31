@@ -56,53 +56,32 @@
     </button>
 </div>
 
-<!-- Classroom Filter & Print Action Box -->
-<div class="glass rounded-3xl p-5 md:p-6 mb-6 shadow-sm border border-white/40 dark:border-white/10 space-y-4">
-    <?php if ($has_assigned_room): ?>
-    <div class="flex items-center justify-between p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-300 text-xs font-black">
-        <div class="flex items-center gap-2">
-            <i class="fas fa-chalkboard-teacher text-amber-500 text-sm"></i>
-            <span>ห้องประจำชั้นของคุณครู: <b class="underline font-black text-amber-600 dark:text-amber-400">ม.<?= $assigned_level ?>/<?= $assigned_room ?></b></span>
-        </div>
-        <button onclick="goToMyRoom()" class="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black transition-all shadow-sm">
-            เลือกห้องประจำชั้นฉัน
-        </button>
-    </div>
-    <?php endif; ?>
-
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <!-- Level & Room Selectors -->
-        <div class="flex flex-wrap items-center gap-3">
-            <!-- Grade Level Chips -->
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                <span class="text-xs font-black text-gray-500 dark:text-gray-400 mr-1 whitespace-nowrap">ระดับชั้น:</span>
-                <?php for ($i = 1; $i <= 6; $i++): ?>
-                <button type="button" class="level-chip px-3.5 py-2 rounded-xl text-xs font-black transition-all <?= $i === $assigned_level ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-slate-700/80 hover:bg-amber-50 dark:hover:bg-slate-700' ?>" data-level="<?= $i ?>">
-                    ม.<?= $i ?>
-                </button>
-                <?php endfor; ?>
+<!-- Advisory Classroom Banner & Print Action Box -->
+<div class="glass rounded-3xl p-5 md:p-6 mb-6 shadow-sm border border-white/40 dark:border-white/10">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-amber-500/30 shrink-0">
+                <i class="fas fa-chalkboard-teacher"></i>
             </div>
-
-            <div class="h-6 w-px bg-gray-200 dark:bg-slate-700 hidden sm:block"></div>
-
-            <!-- Room Select Dropdown -->
-            <div class="flex items-center gap-2">
-                <label for="room-select" class="text-xs font-black text-gray-500 dark:text-gray-400 whitespace-nowrap">ห้องเรียน:</label>
-                <div class="relative inline-flex items-center">
-                    <select id="room-select" class="bg-white dark:bg-slate-800 text-gray-800 dark:text-white font-black text-xs md:text-sm px-3.5 py-2 pr-7 rounded-xl border border-gray-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm cursor-pointer appearance-none">
-                        <option value="<?= $assigned_room ?>">ห้อง <?= $assigned_room ?></option>
-                    </select>
-                    <i class="fas fa-chevron-down absolute right-2.5 text-[10px] text-gray-400 pointer-events-none"></i>
+            <div>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <span class="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">ห้องประจำชั้นที่ปรึกษา:</span>
+                    <span class="text-lg md:text-xl font-black text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-3 py-0.5 rounded-xl border border-amber-200/60 dark:border-amber-800/50">
+                        ม.<?= $assigned_level ?>/<?= $assigned_room ?>
+                    </span>
                 </div>
+                <p class="text-xs text-gray-600 dark:text-gray-400 font-medium mt-1">
+                    <i class="fas fa-user-tie text-amber-500 mr-1"></i>ครูที่ปรึกษา: <b><?= htmlspecialchars($teacherInfo['Teach_name'] ?? $_SESSION['username']) ?></b>
+                </p>
             </div>
         </div>
 
         <!-- Print Action Button -->
         <div class="flex items-center gap-2 shrink-0">
             <a id="btn-print-room" href="print_best_room.php?level=<?= $assigned_level ?>&room=<?= $assigned_room ?>&year=<?= $current_year ?>" target="_blank" 
-               class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs md:text-sm font-black shadow-lg shadow-amber-500/30 transition-all active:scale-95">
-                <i class="fas fa-print"></i>
-                <span>พิมพ์รายชื่อห้องนี้</span>
+               class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-sm font-black shadow-lg shadow-amber-500/30 transition-all active:scale-95">
+                <i class="fas fa-print text-base"></i>
+                <span>พิมพ์รายชื่อห้องเรียน</span>
             </a>
         </div>
     </div>
@@ -245,59 +224,10 @@ function resetToCurrentYear() {
     loadStudents();
 }
 
-function goToMyRoom() {
-    selectedLevel = teacherAssignedLevel;
-    selectedRoom = teacherAssignedRoom;
-    document.querySelectorAll('.level-chip').forEach(b => {
-        if (parseInt(b.dataset.level) === selectedLevel) {
-            b.className = 'level-chip px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-amber-500 text-white shadow-md shadow-amber-500/20';
-        } else {
-            b.className = 'level-chip px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-slate-700/80 hover:bg-amber-50 dark:hover:bg-slate-700';
-        }
-    });
-    loadRoomsForLevel(selectedLevel).then(() => {
-        const roomSelect = document.getElementById('room-select');
-        if (roomSelect) roomSelect.value = selectedRoom;
-        loadStudents();
-    });
-}
-
 function updatePrintLink() {
     const btn = document.getElementById('btn-print-room');
     if (btn) {
         btn.href = `print_best_room.php?level=${selectedLevel}&room=${selectedRoom}&year=${selectedYear}`;
-    }
-}
-
-async function loadRoomsForLevel(level) {
-    try {
-        const res = await fetch(`../controllers/BestActivityController.php?action=rooms_by_level&level=${level}`);
-        const data = await res.json();
-        const roomSelect = document.getElementById('room-select');
-        roomSelect.innerHTML = '';
-        
-        if (data.success && data.rooms && data.rooms.length > 0) {
-            data.rooms.forEach(r => {
-                const opt = document.createElement('option');
-                opt.value = r;
-                opt.textContent = `ห้อง ${r}`;
-                if (r == selectedRoom) opt.selected = true;
-                roomSelect.appendChild(opt);
-            });
-            // If previous selectedRoom not in new level, default to first
-            if (!data.rooms.includes(selectedRoom.toString())) {
-                selectedRoom = data.rooms[0];
-                roomSelect.value = selectedRoom;
-            }
-        } else {
-            const opt = document.createElement('option');
-            opt.value = '1';
-            opt.textContent = 'ห้อง 1';
-            roomSelect.appendChild(opt);
-            selectedRoom = '1';
-        }
-    } catch (e) {
-        console.error('Error fetching rooms:', e);
     }
 }
 
@@ -502,9 +432,7 @@ function renderMobileCards(list) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // 1. Load initial rooms for level 1
-    await loadRoomsForLevel(selectedLevel);
-    // 2. Load students
+    // Load students for advisory classroom
     await loadStudents();
 
     // Year change listener
@@ -520,26 +448,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         loadStudents().then(() => {
             setTimeout(() => icon.classList.remove('fa-spin'), 600);
         });
-    });
-
-    // Level Chips click listener
-    document.querySelectorAll('.level-chip').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            selectedLevel = parseInt(this.dataset.level);
-            document.querySelectorAll('.level-chip').forEach(b => {
-                b.className = 'level-chip px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-slate-700/80 hover:bg-amber-50 dark:hover:bg-slate-700';
-            });
-            this.className = 'level-chip px-3.5 py-2 rounded-xl text-xs font-black transition-all bg-amber-500 text-white shadow-md shadow-amber-500/20';
-            
-            await loadRoomsForLevel(selectedLevel);
-            loadStudents();
-        });
-    });
-
-    // Room Select listener
-    document.getElementById('room-select').addEventListener('change', function() {
-        selectedRoom = this.value;
-        loadStudents();
     });
 
     // Search input

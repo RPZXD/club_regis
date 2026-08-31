@@ -210,36 +210,16 @@ rsort($availableYears);
             </select>
         </div>
 
-        <!-- Filter Grade Level -->
-        <div class="mb-3">
-            <label class="block text-xs font-bold text-slate-600 mb-1">เลือกระดับชั้น:</label>
-            <select id="filter-level" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none font-semibold">
-                <option value="">ทั้งหมด (ทุกระดับชั้น)</option>
-                <option value="1">มัธยมศึกษาปีที่ 1 (ม.1)</option>
-                <option value="2">มัธยมศึกษาปีที่ 2 (ม.2)</option>
-                <option value="3">มัธยมศึกษาปีที่ 3 (ม.3)</option>
-                <option value="4">มัธยมศึกษาปีที่ 4 (ม.4)</option>
-                <option value="5">มัธยมศึกษาปีที่ 5 (ม.5)</option>
-                <option value="6">มัธยมศึกษาปีที่ 6 (ม.6)</option>
-            </select>
-        </div>
-
-        <!-- Filter Room -->
-        <div class="mb-3">
-            <label class="block text-xs font-bold text-slate-600 mb-1">เลือกห้องเรียน:</label>
-            <select id="filter-room" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none font-semibold">
-                <option value="">ทั้งหมด (ทุกห้อง)</option>
-            </select>
-        </div>
-        
-        <!-- Page Grouping Options -->
-        <div class="mb-3 border-t pt-2">
-            <label class="block text-xs font-bold text-slate-600 mb-1">รูปแบบการจัดกลุ่ม / ขึ้นหน้าใหม่:</label>
-            <select id="page-grouping" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none font-semibold">
-                <option value="room" selected>แยกหน้าตามห้องเรียน (ม.X/Y)</option>
-                <option value="level">แยกหน้าตามระดับชั้น (ม.X)</option>
-                <option value="continuous">แสดงรวมกันต่อเนื่อง (ไม่แยกหน้า)</option>
-            </select>
+        <!-- Advisory Room Info -->
+        <div class="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs">
+            <div class="text-slate-500 font-bold mb-1">ห้องประจำชั้นที่ปรึกษา:</div>
+            <div class="text-base font-black text-amber-800 flex items-center gap-1.5">
+                <i class="fas fa-chalkboard-teacher text-amber-600"></i>
+                <span>มัธยมศึกษาปีที่ <?= $init_level ?>/<?= $init_room ?> (ม.<?= $init_level ?>/<?= $init_room ?>)</span>
+            </div>
+            <div class="text-[11px] text-slate-600 mt-1">
+                ครูที่ปรึกษา: <b><?= htmlspecialchars($teacherName) ?></b>
+            </div>
         </div>
 
         <!-- Custom Report Title -->
@@ -320,15 +300,6 @@ rsort($availableYears);
         let selectedYear = <?= json_encode($req_year) ?>;
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Set initial filter values
-            if (initialLevel) {
-                document.getElementById('filter-level').value = initialLevel;
-            }
-            populateRoomDropdown();
-            if (initialRoom) {
-                document.getElementById('filter-room').value = initialRoom;
-            }
-
             // Bind event listeners
             document.getElementById('filter-year').addEventListener('change', function() {
                 const y = this.value;
@@ -337,13 +308,6 @@ rsort($availableYears);
                 window.location.href = url.toString();
             });
 
-            document.getElementById('filter-level').addEventListener('change', function() {
-                populateRoomDropdown();
-                renderReport();
-            });
-
-            document.getElementById('filter-room').addEventListener('change', renderReport);
-            document.getElementById('page-grouping').addEventListener('change', renderReport);
             document.getElementById('custom-title').addEventListener('input', renderReport);
 
             // Font size slider
@@ -363,32 +327,7 @@ rsort($availableYears);
             renderReport();
         });
 
-        function populateRoomDropdown() {
-            const levelVal = document.getElementById('filter-level').value;
-            const roomSelect = document.getElementById('filter-room');
-            const prevRoom = roomSelect.value;
-            
-            roomSelect.innerHTML = '<option value="">ทั้งหมด (ทุกห้อง)</option>';
-            
-            let filtered = allStudents;
-            if (levelVal) {
-                filtered = filtered.filter(s => s.level == levelVal);
-            }
-            
-            const rooms = [...new Set(filtered.map(s => s.room))].sort((a,b) => a - b);
-            rooms.forEach(r => {
-                const opt = document.createElement('option');
-                opt.value = r;
-                opt.textContent = `ห้อง ${r}`;
-                if (r == prevRoom) opt.selected = true;
-                roomSelect.appendChild(opt);
-            });
-        }
-
         function renderReport() {
-            const levelVal = document.getElementById('filter-level').value;
-            const roomVal = document.getElementById('filter-room').value;
-            const grouping = document.getElementById('page-grouping').value;
             const customTitle = document.getElementById('custom-title').value.trim() || 'ใบรายชื่อนักเรียนลงทะเบียนกิจกรรม Best For Teen';
             const fontSize = document.getElementById('fontSizeRange').value + 'px';
 
@@ -400,13 +339,8 @@ rsort($availableYears);
             const colStatus = document.getElementById('col-status').checked;
             const colSign = document.getElementById('col-sign').checked;
 
-            let filtered = allStudents;
-            if (levelVal) {
-                filtered = filtered.filter(s => s.level == levelVal);
-            }
-            if (roomVal) {
-                filtered = filtered.filter(s => s.room == roomVal);
-            }
+            // Filter strictly by the teacher's advisory room
+            let filtered = allStudents.filter(s => s.level == initialLevel && s.room == initialRoom);
 
             const container = document.getElementById('print-container');
             container.innerHTML = '';
@@ -416,29 +350,15 @@ rsort($availableYears);
                     <div class="paper-sheet flex items-center justify-center text-gray-400 font-bold">
                         <div class="text-center py-20">
                             <i class="fas fa-folder-open text-4xl mb-3 block"></i>
-                            ไม่พบข้อมูลนักเรียนตามเงื่อนไขที่เลือก
+                            ไม่พบข้อมูลนักเรียนในห้องประจำชั้น ม.${initialLevel}/${initialRoom}
                         </div>
                     </div>`;
                 return;
             }
 
-            // Group students based on selected grouping
             let groups = {};
-            if (grouping === 'room') {
-                filtered.forEach(s => {
-                    const key = `ม.${s.level}/${s.room}`;
-                    if (!groups[key]) groups[key] = [];
-                    groups[key].push(s);
-                });
-            } else if (grouping === 'level') {
-                filtered.forEach(s => {
-                    const key = `ชั้นมัธยมศึกษาปีที่ ${s.level} (ม.${s.level})`;
-                    if (!groups[key]) groups[key] = [];
-                    groups[key].push(s);
-                });
-            } else {
-                groups['นักเรียนทั้งหมด'] = filtered;
-            }
+            const key = `ม.${initialLevel}/${initialRoom}`;
+            groups[key] = filtered;
 
             // Render each group as A4 sheet(s)
             Object.keys(groups).forEach(groupTitle => {
