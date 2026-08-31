@@ -76,28 +76,36 @@
 </div>
 
 <!-- Quick Actions -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     <a href="club_list.php" class="card-hover glass rounded-2xl p-6 text-center">
-        <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg mb-4">
-            <i class="fas fa-list-check text-white text-2xl"></i>
+        <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg mb-4 text-white text-2xl">
+            <i class="fas fa-list-check"></i>
         </div>
         <h3 class="font-bold text-gray-800 dark:text-white">รายชื่อชุมนุม</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">ดูและจัดการชุมนุม</p>
     </a>
     
     <a href="club_members.php" class="card-hover glass rounded-2xl p-6 text-center">
-        <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg mb-4">
-            <i class="fas fa-user-graduate text-white text-2xl"></i>
+        <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg mb-4 text-white text-2xl">
+            <i class="fas fa-user-graduate"></i>
         </div>
         <h3 class="font-bold text-gray-800 dark:text-white">จัดการนักเรียน</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">อนุมัติ/จัดการสมาชิก</p>
     </a>
+
+    <a href="best_list.php" class="card-hover glass rounded-2xl p-6 text-center">
+        <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg mb-4 text-white text-2xl">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <h3 class="font-bold text-gray-800 dark:text-white">Best For Teen</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">นักเรียนห้องประจำชั้น</p>
+    </a>
     
     <a href="print_club.php" class="card-hover glass rounded-2xl p-6 text-center">
-        <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg mb-4">
-            <i class="fas fa-print text-white text-2xl"></i>
+        <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg mb-4 text-white text-2xl">
+            <i class="fas fa-print"></i>
         </div>
         <h3 class="font-bold text-gray-800 dark:text-white">พิมพ์รายชื่อ</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">พิมพ์รายชื่อสมาชิก</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">พิมพ์รายชื่อสมาชิกชุมนุม</p>
     </a>
 </div>

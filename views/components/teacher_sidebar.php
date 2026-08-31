@@ -24,6 +24,13 @@ $menuItems = [
         'name' => 'จัดการนักเรียน',
         'url' => 'club_members.php',
         'icon' => 'fa-user-graduate',
+        'gradient' => ['from' => 'emerald-500', 'to' => 'teal-600'],
+    ],
+    [
+        'key' => 'best_list',
+        'name' => 'Best For Teen',
+        'url' => 'best_list.php',
+        'icon' => 'fa-trophy',
         'gradient' => ['from' => 'amber-500', 'to' => 'orange-600'],
     ]
 ];

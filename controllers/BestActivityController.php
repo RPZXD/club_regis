@@ -162,6 +162,137 @@ switch ($action) {
         }
         exit;
 
+    case 'rooms_by_level':
+        try {
+            $level = isset($_GET['level']) ? intval($_GET['level']) : 1;
+            if ($level < 1 || $level > 6) $level = 1;
+            
+            $stmt = $dbUsers->query("
+                SELECT DISTINCT Stu_room 
+                FROM student 
+                WHERE Stu_status = '1' AND Stu_major = :level 
+                ORDER BY CAST(Stu_room AS UNSIGNED) ASC
+            ", ['level' => $level]);
+            $rooms = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            echo json_encode([
+                'success' => true,
+                'level' => $level,
+                'rooms' => $rooms ?: ['1']
+            ]);
+        } catch (Exception $e) {
+            jsonError('โหลดรายการห้องเรียนไม่สำเร็จ: ' . $e->getMessage());
+        }
+        exit;
+
+    case 'room_students':
+        try {
+            $req_year = isset($_GET['year']) && intval($_GET['year']) > 0 ? intval($_GET['year']) : $current_year;
+            $level = isset($_GET['level']) ? intval($_GET['level']) : 1;
+            if ($level < 1 || $level > 6) $level = 1;
+            $room = isset($_GET['room']) ? trim($_GET['room']) : '';
+
+            // 1. Fetch available rooms for this level
+            $roomStmt = $dbUsers->query("
+                SELECT DISTINCT Stu_room 
+                FROM student 
+                WHERE Stu_status = '1' AND Stu_major = :level 
+                ORDER BY CAST(Stu_room AS UNSIGNED) ASC
+            ", ['level' => $level]);
+            $availableRooms = $roomStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            // Default to first room if not specified or invalid
+            if (empty($room) && !empty($availableRooms)) {
+                $room = $availableRooms[0];
+            }
+
+            // 2. Fetch students in this level & room
+            $conditions = ["Stu_status = '1'", "Stu_major = :level"];
+            $params = ['level' => $level];
+
+            if ($room !== '' && $room !== 'all') {
+                $conditions[] = "Stu_room = :room";
+                $params['room'] = $room;
+            }
+
+            $sql = "SELECT Stu_id, Stu_pre, Stu_name, Stu_sur, Stu_major, Stu_room, Stu_no 
+                    FROM student 
+                    WHERE " . implode(' AND ', $conditions) . " 
+                    ORDER BY CAST(Stu_major AS UNSIGNED) ASC, CAST(Stu_room AS UNSIGNED) ASC, CAST(Stu_no AS UNSIGNED) ASC, Stu_id ASC";
+            $stmt = $dbUsers->query($sql, $params);
+            $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // 3. Fetch Best For Teen registrations for these students in the requested year
+            $registeredMap = [];
+            if (!empty($students)) {
+                $studentIds = array_column($students, 'Stu_id');
+                $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+                
+                $regStmt = $pdo->prepare("
+                    SELECT bm.student_id, bm.activity_id, bm.created_at, ba.name as activity_name, ba.description as activity_desc
+                    FROM best_members bm
+                    LEFT JOIN best_activities ba ON bm.activity_id = ba.id AND bm.year = ba.year
+                    WHERE bm.year = ? AND bm.student_id IN ($placeholders)
+                ");
+                $regParams = array_merge([$req_year], $studentIds);
+                $regStmt->execute($regParams);
+                
+                while ($r = $regStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $registeredMap[$r['student_id']] = $r;
+                }
+            }
+
+            // 4. Build output list
+            $list = [];
+            $registeredCount = 0;
+            foreach ($students as $stu) {
+                $sid = $stu['Stu_id'];
+                $reg = $registeredMap[$sid] ?? null;
+                $isRegistered = !empty($reg);
+                if ($isRegistered) $registeredCount++;
+
+                $list[] = [
+                    'student_id' => $sid,
+                    'prefix' => $stu['Stu_pre'],
+                    'name' => $stu['Stu_name'],
+                    'surname' => $stu['Stu_sur'],
+                    'fullname' => $stu['Stu_pre'] . $stu['Stu_name'] . ' ' . $stu['Stu_sur'],
+                    'level' => intval($stu['Stu_major']),
+                    'room' => intval($stu['Stu_room']),
+                    'number' => $stu['Stu_no'] !== null ? intval($stu['Stu_no']) : null,
+                    'class_name' => 'ม.' . $stu['Stu_major'] . '/' . $stu['Stu_room'],
+                    'is_registered' => $isRegistered,
+                    'activity_id' => $reg ? intval($reg['activity_id']) : null,
+                    'activity_name' => $reg ? ($reg['activity_name'] ?? 'กิจกรรม Best') : null,
+                    'registered_at' => $reg ? $reg['created_at'] : null
+                ];
+            }
+
+            $totalStudents = count($list);
+            $unregisteredCount = $totalStudents - $registeredCount;
+            $fillRate = $totalStudents > 0 ? round(($registeredCount / $totalStudents) * 100, 1) : 0;
+
+            echo json_encode([
+                'success' => true,
+                'data' => $list,
+                'summary' => [
+                    'total_students' => $totalStudents,
+                    'registered_count' => $registeredCount,
+                    'unregistered_count' => $unregisteredCount,
+                    'fill_rate' => $fillRate
+                ],
+                'filter' => [
+                    'year' => $req_year,
+                    'level' => $level,
+                    'room' => $room,
+                    'available_rooms' => $availableRooms
+                ]
+            ]);
+        } catch (Exception $e) {
+            jsonError('เกิดข้อผิดพลาดในการโหลดข้อมูลห้องเรียน: ' . $e->getMessage());
+        }
+        exit;
+
     case 'list':
         try {
             $req_year = isset($_GET['year']) && intval($_GET['year']) > 0 ? intval($_GET['year']) : $current_year;
