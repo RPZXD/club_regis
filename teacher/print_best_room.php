@@ -239,7 +239,7 @@ rsort($availableYears);
             <label class="block text-xs font-bold text-slate-600 mb-1.5">แสดงคอลัมน์ในตาราง:</label>
             <div class="space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
                 <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" id="col-no" checked class="w-3.5 h-3.5 rounded text-amber-600">
+                    <input type="checkbox" id="col-no" class="w-3.5 h-3.5 rounded text-amber-600">
                     <span class="text-slate-700 font-medium">ลำดับที่</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
@@ -263,7 +263,7 @@ rsort($availableYears);
                     <span class="text-slate-700 font-medium">กิจกรรม Best For Teen</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" id="col-status" checked class="w-3.5 h-3.5 rounded text-amber-600">
+                    <input type="checkbox" id="col-status" class="w-3.5 h-3.5 rounded text-amber-600">
                     <span class="text-slate-700 font-medium">สถานะการสมัคร</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
@@ -373,13 +373,13 @@ rsort($availableYears);
 
                 let tableHeaders = '';
                 if (colNo) tableHeaders += '<th style="width: 5%; text-align: center;">#</th>';
-                if (colId) tableHeaders += '<th style="width: 12%; text-align: center;">รหัสประจำตัว</th>';
-                if (colNum) tableHeaders += '<th style="width: 6%; text-align: center;">เลขที่</th>';
+                if (colId) tableHeaders += '<th style="width: 14%; text-align: center;">รหัสประจำตัว</th>';
+                if (colNum) tableHeaders += '<th style="width: 7%; text-align: center;">เลขที่</th>';
                 tableHeaders += '<th style="text-align: left;">ชื่อ - นามสกุล</th>';
                 if (colClass) tableHeaders += '<th style="width: 10%; text-align: center;">ชั้น/ห้อง</th>';
-                if (colAct) tableHeaders += '<th style="width: 32%; text-align: left;">กิจกรรม Best For Teen</th>';
+                if (colAct) tableHeaders += '<th style="width: 30%; text-align: left;">กิจกรรม Best For Teen</th>';
                 if (colStatus) tableHeaders += '<th style="width: 12%; text-align: center;">สถานะ</th>';
-                if (colSign) tableHeaders += '<th style="width: 14%; text-align: center;">ลงชื่อ / หมายเหตุ</th>';
+                if (colSign) tableHeaders += '<th style="width: 16%; text-align: center;">ช่องลงชื่อ / หมายเหตุ</th>';
 
                 let rowsHtml = '';
                 studentsInGroup.forEach((s, idx) => {
@@ -402,7 +402,7 @@ rsort($availableYears);
                         <h2 style="font-size: 1.4em; font-weight: bold; margin: 0; line-height: 1.2;">${schoolName}</h2>
                         <h3 style="font-size: 1.15em; font-weight: bold; margin: 3px 0 0 0; line-height: 1.2;">${customTitle}</h3>
                         <p style="font-size: 0.95em; margin: 3px 0 0 0; line-height: 1.2;">
-                            ${groupTitle} | ปีการศึกษา ${selectedYear}
+                            ระดับชั้นมัธยมศึกษาปีที่ ${initialLevel}/${initialRoom} (ม.${initialLevel}/${initialRoom}) | ปีการศึกษา ${selectedYear}
                         </p>
                     </div>
 
@@ -423,20 +423,6 @@ rsort($availableYears);
                             ${rowsHtml}
                         </tbody>
                     </table>
-
-                    <!-- Signature Footer -->
-                    <div style="margin-top: 25px; display: flex; justify-content: space-between; font-size: 0.9em; line-height: 1.5; page-break-inside: avoid; break-inside: avoid;">
-                        <div style="text-align: center; width: 45%;">
-                            <p style="margin-bottom: 35px;">ลงชื่อ............................................................ครูประจำชั้น / ครูที่ปรึกษา</p>
-                            <p>( ${teacherName} )</p>
-                            <p>วันที่ ......./......./.......</p>
-                        </div>
-                        <div style="text-align: center; width: 45%;">
-                            <p style="margin-bottom: 35px;">ลงชื่อ............................................................หัวหน้างานกิจกรรม</p>
-                            <p>(............................................................)</p>
-                            <p>วันที่ ......./......./.......</p>
-                        </div>
-                    </div>
                 `;
 
                 container.appendChild(sheet);
