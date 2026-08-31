@@ -175,12 +175,34 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
 </head>
 <body class="p-0 m-0">
 
+    <!-- Floating Top-Right Print Bar (Always visible) -->
+    <div class="no-print fixed top-4 right-4 z-50 flex items-center gap-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-2 rounded-2xl shadow-2xl border border-slate-200">
+        <button onclick="window.print()" class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black py-2.5 px-5 rounded-xl shadow-lg flex items-center gap-2 text-sm transition-all active:scale-95 cursor-pointer">
+            <i class="fas fa-print text-base"></i>
+            <span>พิมพ์รายงาน (Print / PDF)</span>
+        </button>
+        <button onclick="window.close()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-3.5 rounded-xl text-xs transition-all flex items-center gap-1">
+            <i class="fas fa-times"></i>
+            <span>ปิด</span>
+        </button>
+    </div>
+
     <!-- Control Panel (Sidebar) -->
     <div class="control-panel no-print bg-white p-5 rounded-2xl shadow-2xl border border-slate-200">
-        <h3 class="font-black text-slate-800 mb-4 flex items-center gap-2 text-md border-b pb-2">
-            <i class="fas fa-print text-amber-500"></i>
-            พิมพ์รายงาน Best For Teen
-        </h3>
+        <div class="flex items-center justify-between border-b pb-3 mb-4">
+            <h3 class="font-black text-slate-800 flex items-center gap-2 text-md">
+                <i class="fas fa-print text-amber-500"></i>
+                ตั้งค่าพิมพ์รายงาน
+            </h3>
+        </div>
+
+        <!-- Primary Top Action Button inside Sidebar -->
+        <div class="mb-4">
+            <button onclick="window.print()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black py-3 px-4 rounded-xl shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 text-sm transition-all active:scale-95 cursor-pointer animate__animated animate__pulse">
+                <i class="fas fa-print text-lg"></i>
+                <span>พิมพ์รายงาน (Print / PDF)</span>
+            </button>
+        </div>
 
         <!-- Select Report Type -->
         <div class="mb-3">
