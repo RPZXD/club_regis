@@ -27,7 +27,11 @@ $current_year = (int)($termPee ? $termPee->pee : (date('Y') + 543));
 $config = json_decode(file_get_contents('../config.json'), true);
 $global = $config['global'] ?? [];
 
-$reportType = $_GET['report'] ?? 'overview'; // 'overview', 'level', 'room'
+$reportType = $_GET['report'] ?? 'overview'; // 'overview', 'level', 'room', 'activity'
+$init_activity = isset($_GET['activity_id']) ? intval($_GET['activity_id']) : (isset($_GET['id']) ? intval($_GET['id']) : 0);
+if ($init_activity > 0 && !isset($_GET['report'])) {
+    $reportType = 'activity';
+}
 $req_year = isset($_GET['year']) && intval($_GET['year']) > 0 ? intval($_GET['year']) : $current_year;
 $init_level = isset($_GET['level']) ? intval($_GET['level']) : 1;
 if ($init_level < 1 || $init_level > 6) $init_level = 1;
@@ -212,6 +216,7 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
                 <option value="overview" <?= $reportType === 'overview' ? 'selected' : '' ?>>1. สรุปภาพรวมกิจกรรมทั้งหมด</option>
                 <option value="level" <?= $reportType === 'level' ? 'selected' : '' ?>>2. สรุปสถิติตามระดับชั้น (ม.1-6)</option>
                 <option value="room" <?= $reportType === 'room' ? 'selected' : '' ?>>3. รายชื่อนักเรียนรายห้อง (ม.X/Y)</option>
+                <option value="activity" <?= $reportType === 'activity' ? 'selected' : '' ?>>4. ใบเซ็นชื่อตามกิจกรรม (Activity Sign Sheet)</option>
             </select>
         </div>
 
@@ -223,6 +228,35 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
                 <option value="<?= $y ?>" <?= $y == $req_year ? 'selected' : '' ?>>ปีการศึกษา <?= $y ?> <?= $y == $current_year ? '(ปัจจุบัน)' : '' ?></option>
                 <?php endforeach; ?>
             </select>
+        </div>
+
+        <!-- Activity Filter (Visible when activity report is selected) -->
+        <div id="activity-filter-container" class="<?= $reportType === 'activity' ? '' : 'hidden' ?> mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">เลือกกิจกรรม:</label>
+                <select id="filter-activity" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold">
+                    <option value="">ทุกกิจกรรม (พิมพ์แยกหน้าตามกิจกรรม)</option>
+                    <?php foreach ($activitiesWithCounts as $act): ?>
+                    <option value="<?= $act['id'] ?>" <?= $act['id'] == $init_activity ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($act['name']) ?> (<?= $act['current_members'] ?>/<?= $act['max_members'] ?> คน)
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">รูปแบบช่องเซ็นชื่อ:</label>
+                <select id="activity-sign-format" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold">
+                    <option value="dual_time" selected>ลงชื่อมา-กลับ พร้อมเวลา (4 ช่อง: เซ็นมา/เวลามา/เซ็นกลับ/เวลากลับ)</option>
+                    <option value="single_sign">ลงชื่อ 1 ช่อง + หมายเหตุ</option>
+                    <option value="check_only">เช็คชื่อ (ช่องติ๊ก มา/ขาด/ลา)</option>
+                </select>
+            </div>
+            <div class="pt-1">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="show-activity-signature" checked class="w-3.5 h-3.5 rounded text-amber-600">
+                    <span class="text-slate-700 font-bold text-xs">แสดงช่องลงชื่อครูผู้รับผิดชอบด้านล่าง</span>
+                </label>
+            </div>
         </div>
 
         <!-- Room Filter (Visible when room report is selected) -->
@@ -338,20 +372,30 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
             // Report type change
             document.getElementById('report-type').addEventListener('change', function() {
                 const isRoom = (this.value === 'room');
+                const isActivity = (this.value === 'activity');
                 const roomContainer = document.getElementById('room-filter-container');
+                const actContainer = document.getElementById('activity-filter-container');
                 const colsContainer = document.getElementById('room-columns-container');
                 const titleInput = document.getElementById('custom-title');
 
                 if (isRoom) {
                     roomContainer.classList.remove('hidden');
+                    actContainer.classList.add('hidden');
                     colsContainer.classList.remove('hidden');
                     titleInput.value = 'ใบรายชื่อนักเรียนลงทะเบียนกิจกรรม Best For Teen';
+                } else if (isActivity) {
+                    roomContainer.classList.add('hidden');
+                    actContainer.classList.remove('hidden');
+                    colsContainer.classList.add('hidden');
+                    titleInput.value = 'แบบลงทะเบียนเข้าร่วมกิจกรรม Best For Teen';
                 } else if (this.value === 'level') {
                     roomContainer.classList.add('hidden');
+                    actContainer.classList.add('hidden');
                     colsContainer.classList.add('hidden');
                     titleInput.value = 'รายงานสรุปสถิติการลงทะเบียน Best For Teen ตามระดับชั้น';
                 } else {
                     roomContainer.classList.add('hidden');
+                    actContainer.classList.add('hidden');
                     colsContainer.classList.add('hidden');
                     titleInput.value = 'รายงานสรุปภาพรวมกิจกรรม Best For Teen';
                 }
@@ -374,6 +418,9 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
             });
 
             document.getElementById('filter-room').addEventListener('change', renderReport);
+            document.getElementById('filter-activity').addEventListener('change', renderReport);
+            document.getElementById('activity-sign-format').addEventListener('change', renderReport);
+            document.getElementById('show-activity-signature').addEventListener('change', renderReport);
             document.getElementById('page-grouping').addEventListener('change', renderReport);
             document.getElementById('custom-title').addEventListener('input', renderReport);
 
@@ -395,6 +442,8 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
             const initialType = document.getElementById('report-type').value;
             if (initialType === 'room') {
                 document.getElementById('custom-title').value = 'ใบรายชื่อนักเรียนลงทะเบียนกิจกรรม Best For Teen';
+            } else if (initialType === 'activity') {
+                document.getElementById('custom-title').value = 'แบบลงทะเบียนเข้าร่วมกิจกรรม Best For Teen';
             } else if (initialType === 'level') {
                 document.getElementById('custom-title').value = 'รายงานสรุปสถิติการลงทะเบียน Best For Teen ตามระดับชั้น';
             } else {
@@ -436,6 +485,8 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
                 renderOverviewReport(container, customTitle, fontSize);
             } else if (rType === 'level') {
                 renderLevelReport(container, customTitle, fontSize);
+            } else if (rType === 'activity') {
+                renderActivityReport(container, customTitle, fontSize);
             } else {
                 renderRoomReport(container, customTitle, fontSize);
             }
@@ -713,6 +764,149 @@ $activitiesJson = json_encode($activitiesWithCounts, JSON_UNESCAPED_UNICODE);
                             ${rowsHtml}
                         </tbody>
                     </table>
+                `;
+
+                container.appendChild(sheet);
+            });
+        }
+
+        // 4. Activity Member Sign Sheet Report
+        function renderActivityReport(container, customTitle, fontSize) {
+            const actVal = document.getElementById('filter-activity').value;
+            const signFormat = document.getElementById('activity-sign-format').value;
+            const showSig = document.getElementById('show-activity-signature').checked;
+
+            let targetActivities = allActivities;
+            if (actVal) {
+                targetActivities = allActivities.filter(a => a.id == actVal);
+            }
+
+            if (targetActivities.length === 0) {
+                container.innerHTML = `
+                    <div class="paper-sheet flex items-center justify-center text-gray-400 font-bold">
+                        <div class="text-center py-20">
+                            <i class="fas fa-folder-open text-4xl mb-3 block"></i>
+                            ไม่พบกิจกรรมในปีการศึกษานี้
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            targetActivities.forEach(act => {
+                const actMembers = allStudents.filter(s => s.activity_id == act.id);
+                // Sort members by level, room, number
+                actMembers.sort((a, b) => {
+                    if (a.level !== b.level) return a.level - b.level;
+                    if (a.room !== b.room) return a.room - b.room;
+                    return (parseInt(a.number) || 0) - (parseInt(b.number) || 0);
+                });
+
+                const sheet = document.createElement('div');
+                sheet.className = 'paper-sheet text-black';
+                sheet.style.fontSize = fontSize;
+
+                let tableHeaders = '';
+                if (signFormat === 'dual_time') {
+                    tableHeaders = `
+                        <th style="width: 5%; text-align: center;">ลำดับ</th>
+                        <th style="width: 14%; text-align: center;">รหัสประจำตัว</th>
+                        <th style="text-align: left;">ชื่อ - นามสกุล</th>
+                        <th style="width: 9%; text-align: center;">ชั้น/ห้อง</th>
+                        <th style="width: 6%; text-align: center;">เลขที่</th>
+                        <th style="width: 14%; text-align: center;">ลงชื่อมา</th>
+                        <th style="width: 9%; text-align: center;">เวลามา</th>
+                        <th style="width: 14%; text-align: center;">ลงชื่อกลับ</th>
+                        <th style="width: 9%; text-align: center;">เวลากลับ</th>
+                    `;
+                } else if (signFormat === 'single_sign') {
+                    tableHeaders = `
+                        <th style="width: 5%; text-align: center;">ลำดับ</th>
+                        <th style="width: 15%; text-align: center;">รหัสประจำตัว</th>
+                        <th style="text-align: left;">ชื่อ - นามสกุล</th>
+                        <th style="width: 10%; text-align: center;">ชั้น/ห้อง</th>
+                        <th style="width: 7%; text-align: center;">เลขที่</th>
+                        <th style="width: 22%; text-align: center;">ลายมือชื่อนักเรียน</th>
+                        <th style="width: 18%; text-align: center;">หมายเหตุ</th>
+                    `;
+                } else {
+                    tableHeaders = `
+                        <th style="width: 5%; text-align: center;">ลำดับ</th>
+                        <th style="width: 15%; text-align: center;">รหัสประจำตัว</th>
+                        <th style="text-align: left;">ชื่อ - นามสกุล</th>
+                        <th style="width: 10%; text-align: center;">ชั้น/ห้อง</th>
+                        <th style="width: 7%; text-align: center;">เลขที่</th>
+                        <th style="width: 8%; text-align: center;">มา</th>
+                        <th style="width: 8%; text-align: center;">ขาด</th>
+                        <th style="width: 8%; text-align: center;">ลา</th>
+                        <th style="width: 16%; text-align: center;">หมายเหตุ</th>
+                    `;
+                }
+
+                let rowsHtml = '';
+                if (actMembers.length === 0) {
+                    const colspan = (signFormat === 'dual_time' ? 9 : (signFormat === 'single_sign' ? 7 : 9));
+                    rowsHtml = `<tr><td colspan="${colspan}" style="text-align: center; color: #888; padding: 20px;">ไม่มีนักเรียนลงทะเบียนในกิจกรรมนี้</td></tr>`;
+                } else {
+                    actMembers.forEach((s, idx) => {
+                        rowsHtml += '<tr>';
+                        rowsHtml += `<td style="text-align: center;">${idx + 1}</td>`;
+                        rowsHtml += `<td style="text-align: center; font-weight: bold;">${s.student_id}</td>`;
+                        rowsHtml += `<td style="font-weight: 600;">${s.fullname}</td>`;
+                        rowsHtml += `<td style="text-align: center;">ม.${s.level}/${s.room}</td>`;
+                        rowsHtml += `<td style="text-align: center;">${s.number || '-'}</td>`;
+                        if (signFormat === 'dual_time') {
+                            rowsHtml += `<td></td><td></td><td></td><td></td>`;
+                        } else if (signFormat === 'single_sign') {
+                            rowsHtml += `<td></td><td></td>`;
+                        } else {
+                            rowsHtml += `<td></td><td></td><td></td><td></td>`;
+                        }
+                        rowsHtml += '</tr>';
+                    });
+                }
+
+                let sigHtml = '';
+                if (showSig) {
+                    sigHtml = `
+                        <div style="margin-top: 25px; display: flex; justify-content: flex-end; page-break-inside: avoid;">
+                            <div style="text-align: center; width: 280px; font-size: 0.95em;">
+                                <p style="margin-bottom: 40px;">ลงชื่อ..............................................................ครูผู้รับผิดชอบ</p>
+                                <p>(..............................................................)</p>
+                                <p style="margin-top: 4px;">วันที่ ..... เดือน .................... พ.ศ. .........</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                sheet.innerHTML = `
+                    <!-- Header -->
+                    <div style="text-align: center; margin-bottom: 12px;">
+                        <h2 style="font-size: 1.4em; font-weight: bold; margin: 0; line-height: 1.2;">${schoolName}</h2>
+                        <h3 style="font-size: 1.15em; font-weight: bold; margin: 3px 0 0 0; line-height: 1.2;">${customTitle}</h3>
+                        <p style="font-size: 0.95em; margin: 3px 0 0 0; line-height: 1.2;">
+                            กิจกรรม: <b>${act.name}</b> | ปีการศึกษา ${selectedYear} | ระดับชั้นที่เปิดรับ: ${act.grade_levels || 'ทุกระดับชั้น'}
+                        </p>
+                    </div>
+
+                    <!-- Stats Bar -->
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9em; font-weight: bold; border-bottom: 1px dashed #666; padding-bottom: 4px; margin-bottom: 8px;">
+                        <span>ยอดรับทั้งหมด: <b>${act.max_members || 0}</b> ที่นั่ง</span>
+                        <span>จำนวนนักเรียนในกิจกรรม: <b style="color: #047857;">${actMembers.length}</b> คน</span>
+                        <span>คงเหลือ: <b>${Math.max(0, (act.max_members || 0) - actMembers.length)}</b> ที่นั่ง</span>
+                        <span>อัตราการเติมเต็ม: <b>${(act.max_members > 0) ? Math.round((actMembers.length / act.max_members) * 100) : 0}%</b></span>
+                    </div>
+
+                    <!-- Table -->
+                    <table class="print-table">
+                        <thead>
+                            <tr>${tableHeaders}</tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    ${sigHtml}
                 `;
 
                 container.appendChild(sheet);
