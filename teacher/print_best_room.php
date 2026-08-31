@@ -13,11 +13,12 @@ require_once __DIR__ . '/../models/TermPee.php';
 
 use App\DatabaseClub;
 use App\DatabaseUsers;
+use App\Models\BestActivity;
 
 $dbUsers = new DatabaseUsers();
 $dbClub = new DatabaseClub();
 $pdoClub = $dbClub->getPDO();
-$bestModel = new BestActivity($pdoClub, true);
+$bestModel = new BestActivity($pdoClub, false);
 
 $termPee = TermPee::getCurrent();
 $current_term = $termPee ? $termPee->term : 1;
