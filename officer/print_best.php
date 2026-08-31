@@ -286,116 +286,128 @@ $activityJson = json_encode($activity, JSON_UNESCAPED_UNICODE);
             const container = document.getElementById('print-container');
             container.innerHTML = '';
 
-            const sheet = document.createElement('div');
-            sheet.className = 'paper-sheet text-black';
-            sheet.style.fontSize = fontSize;
+            const ITEMS_PER_PAGE = 30;
+            const totalMembers = students.length;
+            const totalPages = Math.max(1, Math.ceil(totalMembers / ITEMS_PER_PAGE));
 
-            let tableHeaders = '';
-            if (signFormat === 'dual_time') {
-                tableHeaders = `
-                    <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
-                    <th style="width: 10%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
-                    <th style="text-align: center;">ชื่อ - นามสกุล</th>
-                    <th style="width: 8%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
-                    <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
-                    <th style="width: 13%; text-align: center;">ลงชื่อมา</th>
-                    <th style="width: 8%; text-align: center;">เวลามา</th>
-                    <th style="width: 13%; text-align: center;">ลงชื่อกลับ</th>
-                    <th style="width: 8%; text-align: center;">เวลากลับ</th>
-                `;
-            } else if (signFormat === 'single_sign') {
-                tableHeaders = `
-                    <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
-                    <th style="width: 11%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
-                    <th style="text-align: center;">ชื่อ - นามสกุล</th>
-                    <th style="width: 9%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
-                    <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
-                    <th style="width: 20%; text-align: center;">ลายมือชื่อนักเรียน</th>
-                    <th style="width: 14%; text-align: center;">หมายเหตุ</th>
-                `;
-            } else {
-                tableHeaders = `
-                    <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
-                    <th style="width: 11%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
-                    <th style="text-align: center;">ชื่อ - นามสกุล</th>
-                    <th style="width: 9%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
-                    <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
-                    <th style="width: 7%; text-align: center;">มา</th>
-                    <th style="width: 7%; text-align: center;">ขาด</th>
-                    <th style="width: 7%; text-align: center;">ลา</th>
-                    <th style="width: 14%; text-align: center;">หมายเหตุ</th>
-                `;
-            }
+            for (let page = 1; page <= totalPages; page++) {
+                const startIdx = (page - 1) * ITEMS_PER_PAGE;
+                const pageStudents = students.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+                const isLastPage = (page === totalPages);
 
-            let rowsHtml = '';
-            if (students.length === 0) {
-                const colspan = (signFormat === 'dual_time' ? 9 : (signFormat === 'single_sign' ? 7 : 9));
-                rowsHtml = `<tr><td colspan="${colspan}" style="text-align: center; color: #888; padding: 25px;">ไม่มีนักเรียนลงทะเบียนในกิจกรรมนี้</td></tr>`;
-            } else {
-                students.forEach((s, idx) => {
-                    const className = (s.Stu_major ? `ม.${s.Stu_major}/${s.Stu_room || ''}` : '-');
-                    rowsHtml += '<tr>';
-                    rowsHtml += `<td style="text-align: center;">${idx + 1}</td>`;
-                    rowsHtml += `<td style="text-align: center; font-weight: bold;">${s.student_id}</td>`;
-                    rowsHtml += `<td style="font-weight: 600; white-space: nowrap;">${s.name}</td>`;
-                    rowsHtml += `<td style="text-align: center;">${className}</td>`;
-                    rowsHtml += `<td style="text-align: center;">${s.Stu_no || '-'}</td>`;
-                    if (signFormat === 'dual_time') {
-                        rowsHtml += `<td></td><td></td><td></td><td></td>`;
-                    } else if (signFormat === 'single_sign') {
-                        rowsHtml += `<td></td><td></td>`;
-                    } else {
-                        rowsHtml += `<td></td><td></td><td></td><td></td>`;
-                    }
-                    rowsHtml += '</tr>';
-                });
-            }
+                const sheet = document.createElement('div');
+                sheet.className = 'paper-sheet text-black';
+                sheet.style.fontSize = fontSize;
 
-            let sigHtml = '';
-            if (showSig) {
-                sigHtml = `
-                    <div style="margin-top: 15px; display: flex; justify-content: flex-end; page-break-inside: avoid;">
-                        <div style="text-align: center; width: 280px; font-size: 0.95em; line-height: 1.5;">
-                            <p style="margin: 0 0 4px 0;">ลงชื่อ..............................................................ครูผู้รับผิดชอบ</p>
-                            <p style="margin: 0 0 4px 0;">(..............................................................)</p>
-                            <p style="margin: 0;">วันที่ ..... เดือน .................... พ.ศ. .........</p>
+                let tableHeaders = '';
+                if (signFormat === 'dual_time') {
+                    tableHeaders = `
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
+                        <th style="width: 10%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
+                        <th style="text-align: center;">ชื่อ - นามสกุล</th>
+                        <th style="width: 8%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
+                        <th style="width: 13%; text-align: center;">ลงชื่อมา</th>
+                        <th style="width: 8%; text-align: center;">เวลามา</th>
+                        <th style="width: 13%; text-align: center;">ลงชื่อกลับ</th>
+                        <th style="width: 8%; text-align: center;">เวลากลับ</th>
+                    `;
+                } else if (signFormat === 'single_sign') {
+                    tableHeaders = `
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
+                        <th style="width: 11%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
+                        <th style="text-align: center;">ชื่อ - นามสกุล</th>
+                        <th style="width: 9%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
+                        <th style="width: 20%; text-align: center;">ลายมือชื่อนักเรียน</th>
+                        <th style="width: 14%; text-align: center;">หมายเหตุ</th>
+                    `;
+                } else {
+                    tableHeaders = `
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">ลำดับ</th>
+                        <th style="width: 11%; text-align: center; white-space: nowrap;">รหัสประจำตัว</th>
+                        <th style="text-align: center;">ชื่อ - นามสกุล</th>
+                        <th style="width: 9%; text-align: center; white-space: nowrap;">ชั้น/ห้อง</th>
+                        <th style="width: 6%; text-align: center; white-space: nowrap;">เลขที่</th>
+                        <th style="width: 7%; text-align: center;">มา</th>
+                        <th style="width: 7%; text-align: center;">ขาด</th>
+                        <th style="width: 7%; text-align: center;">ลา</th>
+                        <th style="width: 14%; text-align: center;">หมายเหตุ</th>
+                    `;
+                }
+
+                let rowsHtml = '';
+                if (pageStudents.length === 0) {
+                    const colspan = (signFormat === 'dual_time' ? 9 : (signFormat === 'single_sign' ? 7 : 9));
+                    rowsHtml = `<tr><td colspan="${colspan}" style="text-align: center; color: #888; padding: 25px;">ไม่มีนักเรียนลงทะเบียนในกิจกรรมนี้</td></tr>`;
+                } else {
+                    pageStudents.forEach((s, idx) => {
+                        const className = (s.Stu_major ? `ม.${s.Stu_major}/${s.Stu_room || ''}` : '-');
+                        rowsHtml += '<tr>';
+                        rowsHtml += `<td style="text-align: center;">${startIdx + idx + 1}</td>`;
+                        rowsHtml += `<td style="text-align: center; font-weight: bold;">${s.student_id}</td>`;
+                        rowsHtml += `<td style="font-weight: 600; white-space: nowrap;">${s.name}</td>`;
+                        rowsHtml += `<td style="text-align: center;">${className}</td>`;
+                        rowsHtml += `<td style="text-align: center;">${s.Stu_no || '-'}</td>`;
+                        if (signFormat === 'dual_time') {
+                            rowsHtml += `<td></td><td></td><td></td><td></td>`;
+                        } else if (signFormat === 'single_sign') {
+                            rowsHtml += `<td></td><td></td>`;
+                        } else {
+                            rowsHtml += `<td></td><td></td><td></td><td></td>`;
+                        }
+                        rowsHtml += '</tr>';
+                    });
+                }
+
+                let sigHtml = '';
+                if (showSig && isLastPage) {
+                    sigHtml = `
+                        <div style="margin-top: 15px; display: flex; justify-content: flex-end; page-break-inside: avoid;">
+                            <div style="text-align: center; width: 280px; font-size: 0.95em; line-height: 1.5;">
+                                <p style="margin: 0 0 4px 0;">ลงชื่อ..............................................................ครูผู้รับผิดชอบ</p>
+                                <p style="margin: 0 0 4px 0;">(..............................................................)</p>
+                                <p style="margin: 0;">วันที่ ..... เดือน .................... พ.ศ. .........</p>
+                            </div>
                         </div>
+                    `;
+                }
+
+                const pageIndicator = (totalPages > 1) ? ` <span style="font-size: 0.85em; font-weight: bold; color: #444;">(หน้า ${page}/${totalPages})</span>` : '';
+
+                sheet.innerHTML = `
+                    <!-- Header -->
+                    <div style="text-align: center; margin-bottom: 12px;">
+                        <h2 style="font-size: 1.4em; font-weight: bold; margin: 0; line-height: 1.2;">${schoolName}</h2>
+                        <h3 style="font-size: 1.15em; font-weight: bold; margin: 3px 0 0 0; line-height: 1.2;">${customTitle}${pageIndicator}</h3>
+                        <p style="font-size: 0.95em; margin: 3px 0 0 0; line-height: 1.2;">
+                            กิจกรรม: <b>${activity.name}</b> | ปีการศึกษา ${selectedYear} | ระดับชั้นที่เปิดรับ: ${activity.grade_levels || 'ทุกระดับชั้น'}
+                        </p>
                     </div>
+
+                    <!-- Stats Bar -->
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9em; font-weight: bold; border-bottom: 1px dashed #666; padding-bottom: 4px; margin-bottom: 8px;">
+                        <span>ยอดรับทั้งหมด: <b>${activity.max_members || 0}</b> ที่นั่ง</span>
+                        <span>จำนวนนักเรียนในกิจกรรม: <b style="color: #047857;">${totalMembers}</b> คน</span>
+                        <span>คงเหลือ: <b>${Math.max(0, (activity.max_members || 0) - totalMembers)}</b> ที่นั่ง</span>
+                        <span>อัตราการเติมเต็ม: <b>${(activity.max_members > 0) ? Math.round((totalMembers / activity.max_members) * 100) : 0}%</b></span>
+                    </div>
+
+                    <!-- Table -->
+                    <table class="print-table">
+                        <thead>
+                            <tr>${tableHeaders}</tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    ${sigHtml}
                 `;
+
+                container.appendChild(sheet);
             }
-
-            sheet.innerHTML = `
-                <!-- Header -->
-                <div style="text-align: center; margin-bottom: 12px;">
-                    <h2 style="font-size: 1.4em; font-weight: bold; margin: 0; line-height: 1.2;">${schoolName}</h2>
-                    <h3 style="font-size: 1.15em; font-weight: bold; margin: 3px 0 0 0; line-height: 1.2;">${customTitle}</h3>
-                    <p style="font-size: 0.95em; margin: 3px 0 0 0; line-height: 1.2;">
-                        กิจกรรม: <b>${activity.name}</b> | ปีการศึกษา ${selectedYear} | ระดับชั้นที่เปิดรับ: ${activity.grade_levels || 'ทุกระดับชั้น'}
-                    </p>
-                </div>
-
-                <!-- Stats Bar -->
-                <div style="display: flex; justify-content: space-between; font-size: 0.9em; font-weight: bold; border-bottom: 1px dashed #666; padding-bottom: 4px; margin-bottom: 8px;">
-                    <span>ยอดรับทั้งหมด: <b>${activity.max_members || 0}</b> ที่นั่ง</span>
-                    <span>จำนวนนักเรียนในกิจกรรม: <b style="color: #047857;">${students.length}</b> คน</span>
-                    <span>คงเหลือ: <b>${Math.max(0, (activity.max_members || 0) - students.length)}</b> ที่นั่ง</span>
-                    <span>อัตราการเติมเต็ม: <b>${(activity.max_members > 0) ? Math.round((students.length / activity.max_members) * 100) : 0}%</b></span>
-                </div>
-
-                <!-- Table -->
-                <table class="print-table">
-                    <thead>
-                        <tr>${tableHeaders}</tr>
-                    </thead>
-                    <tbody>
-                        ${rowsHtml}
-                    </tbody>
-                </table>
-
-                ${sigHtml}
-            `;
-
-            container.appendChild(sheet);
         }
     </script>
 </body>
