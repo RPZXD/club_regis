@@ -25,7 +25,7 @@ $dbUsers = new DatabaseUsers();
 
 $activity = $bestModel->getById($id);
 if (!$activity) { echo 'ไม่พบกิจกรรม'; exit; }
-$year = intval($activity['year']);
+$year = isset($_GET['year']) && intval($_GET['year']) > 0 ? intval($_GET['year']) : intval($activity['year'] ?? (date('Y') + 543));
 
 // fetch members and enrich with student data
 $members = $bestModel->listMembers($id, $year);

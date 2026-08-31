@@ -39,6 +39,10 @@
             <button onclick="refreshData()" class="p-3 rounded-2xl glass text-amber-600 dark:text-amber-400 shadow-sm border border-white/50 dark:border-white/10 hover:shadow-md transition-all active:scale-95" title="รีเฟรชข้อมูล">
                 <i class="fas fa-sync-alt" id="refresh-icon"></i>
             </button>
+            <a id="btn-print-report-main" href="print_best_report.php?report=overview&year=<?= $current_year ?>" target="_blank" class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg shadow-amber-500/25 transition-all active:scale-95 text-xs font-black">
+                <i class="fas fa-print"></i>
+                <span>พิมพ์รายงาน</span>
+            </a>
             <a href="best_list.php" class="flex items-center gap-2 px-4 py-3 rounded-2xl glass text-gray-700 dark:text-gray-200 shadow-sm border border-white/50 dark:border-white/10 hover:shadow-md transition-all active:scale-95 text-xs font-black">
                 <i class="fas fa-list-check text-amber-500"></i>
                 <span>จัดการกิจกรรม</span>
@@ -125,6 +129,17 @@
 
 <!-- Tab 1: Overview -->
 <div id="tab-overview" class="tab-content animate__animated animate__fadeIn">
+    <div class="flex items-center justify-between p-4 bg-white/50 dark:bg-slate-800/50 rounded-2xl mb-4 border border-white/40 dark:border-white/10">
+        <div class="font-black text-sm text-gray-800 dark:text-white flex items-center gap-2">
+            <i class="fas fa-table-list text-amber-500"></i>
+            <span>ตารางสรุปกิจกรรมภาพรวม</span>
+        </div>
+        <a id="btn-print-overview" href="print_best_report.php?report=overview&year=<?= $current_year ?>" target="_blank" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-black transition-all shadow-md flex items-center gap-1.5 active:scale-95">
+            <i class="fas fa-print"></i>
+            <span>พิมพ์รายงานภาพรวม</span>
+        </a>
+    </div>
+
     <!-- Desktop Table View -->
     <div class="hidden md:block glass rounded-3xl overflow-hidden border border-white/40 dark:border-white/10 shadow-xl">
         <div class="overflow-x-auto">
@@ -162,6 +177,12 @@
                 <option value="<?= $i ?>" class="bg-white dark:bg-slate-900 text-gray-800 dark:text-white">มัธยมศึกษาปีที่ <?= $i ?></option>
                 <?php endfor; ?>
             </select>
+            <div class="flex items-center justify-end mt-3">
+                <a id="btn-print-level" href="print_best_report.php?report=level&year=<?= $current_year ?>" target="_blank" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-black transition-all shadow-md flex items-center gap-1.5 active:scale-95">
+                    <i class="fas fa-print"></i>
+                    <span>พิมพ์รายงานตามระดับชั้น</span>
+                </a>
+            </div>
         </div>
 
         <!-- Desktop Table -->
@@ -231,6 +252,10 @@
                         <i class="fas fa-users-viewfinder text-emerald-500"></i>
                         <span>รายชื่อนักเรียน</span>
                     </h3>
+                    <a id="btn-print-room" href="print_best_report.php?report=room&level=1&room=1&year=<?= $current_year ?>" target="_blank" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-black transition-all shadow-md flex items-center gap-1.5 active:scale-95">
+                        <i class="fas fa-print"></i>
+                        <span>พิมพ์รายชื่อห้องนี้</span>
+                    </a>
                 </div>
                 
                 <!-- Desktop Table -->
@@ -339,8 +364,34 @@ document.querySelectorAll('.report-tab').forEach(tab => {
         if (this.dataset.tab === 'overview') updateOverview();
         if (this.dataset.tab === 'level') updateLevel();
         if (this.dataset.tab === 'room') updateRoomUi();
+        updatePrintButtons();
     });
 });
+
+function updatePrintButtons() {
+    const mainBtn = document.getElementById('btn-print-report-main');
+    const overviewBtn = document.getElementById('btn-print-overview');
+    const levelBtn = document.getElementById('btn-print-level');
+    const roomBtn = document.getElementById('btn-print-room');
+    
+    const activeTab = document.querySelector('.report-tab.active')?.dataset.tab || 'overview';
+    
+    if (mainBtn) {
+        mainBtn.href = `print_best_report.php?report=${activeTab}&year=${selectedYear}`;
+    }
+    if (overviewBtn) {
+        overviewBtn.href = `print_best_report.php?report=overview&year=${selectedYear}`;
+    }
+    if (levelBtn) {
+        const lvl = document.getElementById('level-select')?.value || '1';
+        levelBtn.href = `print_best_report.php?report=level&level=${lvl}&year=${selectedYear}`;
+    }
+    if (roomBtn) {
+        const lvl = document.getElementById('room-level-select')?.value || '1';
+        const rm = document.getElementById('room-room-select')?.value || '1';
+        roomBtn.href = `print_best_report.php?report=room&level=${lvl}&room=${rm}&year=${selectedYear}`;
+    }
+}
 
 function updateYearUiState() {
     const isCurrent = (parseInt(selectedYear) === parseInt(CURRENT_SYSTEM_YEAR));
@@ -357,6 +408,7 @@ function updateYearUiState() {
         notice.classList.remove('hidden');
         document.getElementById('history-year-text').textContent = selectedYear;
     }
+    updatePrintButtons();
 }
 
 function resetToCurrentYear() {
@@ -669,12 +721,21 @@ document.getElementById('year-select').addEventListener('change', function() {
     loadInitialData();
 });
 
-document.getElementById('level-select').addEventListener('change', updateLevel);
-document.getElementById('room-level-select').addEventListener('change', updateRoomUi);
+document.getElementById('level-select').addEventListener('change', () => {
+    updateLevel();
+    updatePrintButtons();
+});
+document.getElementById('room-level-select').addEventListener('change', () => {
+    updateRoomUi();
+    updatePrintButtons();
+});
+document.getElementById('room-room-select').addEventListener('change', updatePrintButtons);
+
 document.getElementById('room-search-btn').addEventListener('click', () => {
     const level = document.getElementById('room-level-select').value;
     const room = document.getElementById('room-room-select').value;
     loadRoomStudents(level, room);
+    updatePrintButtons();
 });
 
 document.getElementById('activity-load-btn').addEventListener('click', async function() {
@@ -686,7 +747,7 @@ document.getElementById('activity-load-btn').addEventListener('click', async fun
     const header = document.getElementById('activity-report-header');
     const printBtn = document.getElementById('activity-print-btn');
     
-    if (printBtn) printBtn.href = `print_best.php?id=${activityId}`;
+    if (printBtn) printBtn.href = `print_best.php?id=${activityId}&year=${selectedYear}`;
 
     [body, mobileBody].forEach(b => b.innerHTML = '<div class="py-16 text-center col-span-full"><div class="w-8 h-8 border-4 border-emerald-200 border-t-emerald-500 rounded-full animate-spin mx-auto mb-2"></div><p class="text-xs text-gray-400 font-bold">กำลังโหลดรายชื่อ...</p></div>');
     
