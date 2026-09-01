@@ -288,17 +288,21 @@
 <!-- Tab 4: By Activity -->
 <div id="tab-activity" class="tab-content hidden animate__animated animate__fadeIn">
     <div class="glass rounded-3xl p-6 border border-white/40 dark:border-white/10 shadow-xl mb-6">
-        <div class="max-w-2xl mx-auto flex flex-col md:flex-row gap-4 items-end">
+        <div class="max-w-3xl mx-auto flex flex-col md:flex-row gap-4 items-end">
             <div class="flex-1 w-full">
                 <label class="block text-sm font-black text-gray-700 dark:text-gray-300 mb-2 ml-1">เลือกกิจกรรม</label>
                 <select id="activity-select" class="w-full px-5 py-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 text-base font-black text-gray-800 dark:text-white focus:outline-none focus:border-amber-400 transition-all shadow-sm">
                     <option value="">-- เลือกกิจกรรม --</option>
                 </select>
             </div>
-            <button id="activity-load-btn" class="w-full md:w-auto px-8 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all h-[60px] flex items-center justify-center gap-2">
-                <i class="fas fa-download"></i>
-                <span>โหลดรายชื่อ</span>
+            <button id="activity-load-btn" class="w-full md:w-auto px-6 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all h-[60px] flex items-center justify-center gap-2 text-sm">
+                <i class="fas fa-search"></i>
+                <span>แสดงรายชื่อ</span>
             </button>
+            <a id="all-activities-excel-btn" href="export_best_excel.php?id=all&year=<?= $current_year ?>" class="w-full md:w-auto px-5 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black shadow-lg shadow-emerald-600/20 active:scale-95 transition-all h-[60px] flex items-center justify-center gap-2 text-xs cursor-pointer" title="ดาวน์โหลด Excel รายชื่อนักเรียนทุกกิจกรรม">
+                <i class="fas fa-file-excel text-emerald-200 text-base"></i>
+                <span>Excel ทุกกิจกรรม</span>
+            </a>
         </div>
     </div>
 
@@ -308,10 +312,16 @@
                 <h3 id="selected-activity-name" class="text-xl font-black uppercase leading-none mb-1">...</h3>
                 <p id="selected-activity-stats" class="text-xs font-bold opacity-90 uppercase tracking-widest">สมาชิก 0 คน</p>
             </div>
-            <a id="activity-print-btn" href="#" target="_blank" class="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white text-xs font-black flex items-center gap-2 transition-all" title="พิมพ์รายชื่อ">
-                <i class="fas fa-print"></i>
-                <span>พิมพ์รายชื่อ</span>
-            </a>
+            <div class="flex items-center gap-2">
+                <a id="activity-excel-btn" href="#" class="px-4 py-2.5 rounded-2xl bg-emerald-700/90 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-2 transition-all shadow-md active:scale-95 border border-emerald-400/30" title="ดาวน์โหลดไฟล์ Excel กิจกรรมนี้">
+                    <i class="fas fa-file-excel text-emerald-200"></i>
+                    <span>ดาวน์โหลด Excel</span>
+                </a>
+                <a id="activity-print-btn" href="#" target="_blank" class="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white text-xs font-black flex items-center gap-2 transition-all shadow-md active:scale-95" title="พิมพ์รายชื่อ">
+                    <i class="fas fa-print"></i>
+                    <span>พิมพ์รายชื่อ</span>
+                </a>
+            </div>
         </div>
 
         <!-- Desktop Table -->
@@ -373,6 +383,7 @@ function updatePrintButtons() {
     const overviewBtn = document.getElementById('btn-print-overview');
     const levelBtn = document.getElementById('btn-print-level');
     const roomBtn = document.getElementById('btn-print-room');
+    const allExcelBtn = document.getElementById('all-activities-excel-btn');
     
     const activeTab = document.querySelector('.report-tab.active')?.dataset.tab || 'overview';
     
@@ -390,6 +401,9 @@ function updatePrintButtons() {
         const lvl = document.getElementById('room-level-select')?.value || '1';
         const rm = document.getElementById('room-room-select')?.value || '1';
         roomBtn.href = `print_best_report.php?report=room&level=${lvl}&room=${rm}&year=${selectedYear}`;
+    }
+    if (allExcelBtn) {
+        allExcelBtn.href = `export_best_excel.php?id=all&year=${selectedYear}`;
     }
 }
 
@@ -746,8 +760,10 @@ document.getElementById('activity-load-btn').addEventListener('click', async fun
     const mobileBody = document.getElementById('best-activity-members-mobile');
     const header = document.getElementById('activity-report-header');
     const printBtn = document.getElementById('activity-print-btn');
+    const excelBtn = document.getElementById('activity-excel-btn');
     
     if (printBtn) printBtn.href = `print_best.php?id=${activityId}&year=${selectedYear}`;
+    if (excelBtn) excelBtn.href = `export_best_excel.php?id=${activityId}&year=${selectedYear}`;
 
     [body, mobileBody].forEach(b => b.innerHTML = '<div class="py-16 text-center col-span-full"><div class="w-8 h-8 border-4 border-emerald-200 border-t-emerald-500 rounded-full animate-spin mx-auto mb-2"></div><p class="text-xs text-gray-400 font-bold">กำลังโหลดรายชื่อ...</p></div>');
     
