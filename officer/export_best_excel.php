@@ -28,7 +28,8 @@ $pdo = $db->getPDO();
 $bestModel = new BestActivity($pdo);
 $dbUsers = new DatabaseUsers();
 
-$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$rawId = isset($_GET['id']) ? trim($_GET['id']) : 'all';
+$id = ($rawId === 'all' || $rawId === '') ? 0 : intval($rawId);
 $year = isset($_GET['year']) && intval($_GET['year']) > 0 ? intval($_GET['year']) : $current_year;
 
 $targetActivities = [];
@@ -36,15 +37,19 @@ if ($id > 0) {
     $act = $bestModel->getById($id);
     if ($act) {
         $targetActivities[] = $act;
-        $filename = "รายชื่อนักเรียน_BestForTeen_" . preg_replace('/[^\wก-๙\-]/u', '_', $act['name']) . "_{$year}.xls";
+        $cleanName = preg_replace('/[^\wก-๙\-]/u', '_', $act['name']);
+        $filename = "รายชื่อนักเรียน_BestForTeen_{$cleanName}_{$year}.xls";
     } else {
-        echo 'ไม่พบกิจกรรมที่ระบุ';
-        exit;
+        $filename = "รายชื่อนักเรียน_BestForTeen_{$id}_{$year}.xls";
     }
 } else {
     // All activities in that year
-    $targetActivities = $bestModel->listActivities($year);
+    $targetActivities = $bestModel->getAll($year);
     $filename = "รายชื่อนักเรียน_BestForTeen_ทุกกิจกรรม_ปีการศึกษา_{$year}.xls";
+}
+
+if (ob_get_level()) {
+    ob_end_clean();
 }
 
 header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
@@ -58,7 +63,7 @@ echo "\xEF\xBB\xBF"; // UTF-8 BOM
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <style>
         body { font-family: 'Sarabun', 'TH Sarabun New', Tahoma, sans-serif; }
-        table { border-collapse: collapse; width: 100%; font-size: 13px; margin-bottom: 25px; }
+        table { border-collapse: collapse; width: 100%; font-size: 13px; margin-bottom: 30px; }
         th { 
             background-color: #059669; 
             color: #ffffff; 
@@ -85,34 +90,40 @@ echo "\xEF\xBB\xBF"; // UTF-8 BOM
 </head>
 <body>
 <?php
+if (empty($targetActivities)) {
+    echo '<p style="text-align:center; padding:30px; color:#666;">ไม่พบข้อมูลกิจกรรมในปีการศึกษา ' . htmlspecialchars($year) . '</p>';
+}
+
 foreach ($targetActivities as $actIdx => $activity):
     $actId = $activity['id'];
     $members = $bestModel->listMembers($actId, $year);
 
     $students = [];
-    foreach ($members as $row) {
-        $stu = $dbUsers->getStudentByUsername($row['student_id']);
-        $students[] = [
-            'student_id' => $row['student_id'],
-            'prefix'     => $stu['Stu_pre'] ?? '',
-            'name'       => $stu['Stu_name'] ?? '',
-            'surname'    => $stu['Stu_sur'] ?? '',
-            'fullname'   => $stu ? ($stu['Stu_pre'].$stu['Stu_name'].' '.$stu['Stu_sur']) : $row['student_id'],
-            'Stu_major'  => $stu['Stu_major'] ?? null,
-            'Stu_room'   => $stu['Stu_room'] ?? null,
-            'Stu_no'     => $stu['Stu_no'] ?? null,
-            'created_at' => $row['created_at'] ?? ''
-        ];
-    }
+    if (!empty($members)) {
+        foreach ($members as $row) {
+            $stu = $dbUsers->getStudentByUsername($row['student_id']);
+            $students[] = [
+                'student_id' => $row['student_id'],
+                'prefix'     => $stu['Stu_pre'] ?? '',
+                'name'       => $stu['Stu_name'] ?? '',
+                'surname'    => $stu['Stu_sur'] ?? '',
+                'fullname'   => $stu ? ($stu['Stu_pre'].$stu['Stu_name'].' '.$stu['Stu_sur']) : $row['student_id'],
+                'Stu_major'  => $stu['Stu_major'] ?? null,
+                'Stu_room'   => $stu['Stu_room'] ?? null,
+                'Stu_no'     => $stu['Stu_no'] ?? null,
+                'created_at' => $row['created_at'] ?? ''
+            ];
+        }
 
-    // Sort by Grade Level, Room, Number
-    usort($students, function($a, $b) {
-        $cmp = intval($a['Stu_major']) <=> intval($b['Stu_major']);
-        if ($cmp !== 0) return $cmp;
-        $cmp = intval($a['Stu_room']) <=> intval($b['Stu_room']);
-        if ($cmp !== 0) return $cmp;
-        return intval($a['Stu_no']) <=> intval($b['Stu_no']);
-    });
+        // Sort by Grade Level, Room, Number
+        usort($students, function($a, $b) {
+            $cmp = intval($a['Stu_major']) <=> intval($b['Stu_major']);
+            if ($cmp !== 0) return $cmp;
+            $cmp = intval($a['Stu_room']) <=> intval($b['Stu_room']);
+            if ($cmp !== 0) return $cmp;
+            return intval($a['Stu_no']) <=> intval($b['Stu_no']);
+        });
+    }
 ?>
     <table>
         <tr>
