@@ -299,9 +299,9 @@
                 <i class="fas fa-search"></i>
                 <span>แสดงรายชื่อ</span>
             </button>
-            <a id="all-activities-excel-btn" href="export_best_excel.php?id=all&year=<?= $current_year ?>" class="w-full md:w-auto px-5 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black shadow-lg shadow-emerald-600/20 active:scale-95 transition-all h-[60px] flex items-center justify-center gap-2 text-xs cursor-pointer" title="ดาวน์โหลด Excel รายชื่อนักเรียนทุกกิจกรรม">
+            <a id="activity-top-excel-btn" href="export_best_excel.php?id=all&year=<?= $current_year ?>" class="w-full md:w-auto px-5 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black shadow-lg shadow-emerald-600/20 active:scale-95 transition-all h-[60px] flex items-center justify-center gap-2 text-xs cursor-pointer" title="ดาวน์โหลดไฟล์ Excel">
                 <i class="fas fa-file-excel text-emerald-200 text-base"></i>
-                <span>Excel ทุกกิจกรรม</span>
+                <span id="top-excel-btn-label">Excel ทุกกิจกรรม</span>
             </a>
         </div>
     </div>
@@ -383,7 +383,6 @@ function updatePrintButtons() {
     const overviewBtn = document.getElementById('btn-print-overview');
     const levelBtn = document.getElementById('btn-print-level');
     const roomBtn = document.getElementById('btn-print-room');
-    const allExcelBtn = document.getElementById('all-activities-excel-btn');
     
     const activeTab = document.querySelector('.report-tab.active')?.dataset.tab || 'overview';
     
@@ -402,8 +401,37 @@ function updatePrintButtons() {
         const rm = document.getElementById('room-room-select')?.value || '1';
         roomBtn.href = `print_best_report.php?report=room&level=${lvl}&room=${rm}&year=${selectedYear}`;
     }
-    if (allExcelBtn) {
-        allExcelBtn.href = `export_best_excel.php?id=all&year=${selectedYear}`;
+    updateActivityExcelBtn();
+}
+
+function updateActivityExcelBtn() {
+    const actId = document.getElementById('activity-select')?.value;
+    const topExcelBtn = document.getElementById('activity-top-excel-btn');
+    const topExcelLabel = document.getElementById('top-excel-btn-label');
+    const headerExcelBtn = document.getElementById('activity-excel-btn');
+
+    if (actId) {
+        if (topExcelBtn) {
+            topExcelBtn.href = `export_best_excel.php?id=${actId}&year=${selectedYear}`;
+            topExcelBtn.title = `ดาวน์โหลด Excel เฉพาะกิจกรรมที่เลือก`;
+        }
+        if (topExcelLabel) {
+            topExcelLabel.textContent = `Excel กิจกรรมที่เลือก`;
+        }
+        if (headerExcelBtn) {
+            headerExcelBtn.href = `export_best_excel.php?id=${actId}&year=${selectedYear}`;
+        }
+    } else {
+        if (topExcelBtn) {
+            topExcelBtn.href = `export_best_excel.php?id=all&year=${selectedYear}`;
+            topExcelBtn.title = `ดาวน์โหลด Excel ทุกกิจกรรม (ปีการศึกษา ${selectedYear})`;
+        }
+        if (topExcelLabel) {
+            topExcelLabel.textContent = `Excel ทุกกิจกรรม`;
+        }
+        if (headerExcelBtn) {
+            headerExcelBtn.href = `export_best_excel.php?id=all&year=${selectedYear}`;
+        }
     }
 }
 
@@ -744,6 +772,7 @@ document.getElementById('room-level-select').addEventListener('change', () => {
     updatePrintButtons();
 });
 document.getElementById('room-room-select').addEventListener('change', updatePrintButtons);
+document.getElementById('activity-select').addEventListener('change', updateActivityExcelBtn);
 
 document.getElementById('room-search-btn').addEventListener('click', () => {
     const level = document.getElementById('room-level-select').value;
